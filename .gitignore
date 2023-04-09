@@ -5,7 +5,7 @@ __pycache__/
 # *.pickle
 # C extensions
 *.so
-# token.pickle
+creds.json
 # Distribution / packaging
 src/temp
 .Python
