@@ -128,5 +128,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+<<<<<<< HEAD
 # token.pickle
 RAW - 2023-05-06 21:35:48.423862_.json
+=======
+src/main.py
+test_gmail_auth.py
+>>>>>>> 0bdad21 (adde google auth)
