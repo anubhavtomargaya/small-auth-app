@@ -2,10 +2,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*.pickle
 # C extensions
 *.so
-
+token.pickle
 # Distribution / packaging
 .Python
 build/
@@ -127,3 +127,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+token.pickle
