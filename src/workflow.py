@@ -12,6 +12,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from bs4 import BeautifulSoup
 import base64
+from models import db
 # from playhouse.shortcuts import model_to_dict, dict_to_model
 import pandas as pd
 import logging
@@ -82,6 +83,7 @@ class GmailConnector:
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(credentials_file, SCOPES)
                 self.creds = flow.run_local_server(port=0)
+                print(self.creds)
     
             # Save the access token in token.pickle file for the next run
             with open(token_file, 'wb') as token:
@@ -202,7 +204,7 @@ def get_messages_data_from_threads(service,ids):
         raise TypeError('List of Ids expected')
         
 
-def extractCodedContentFromRawMessages(raw_messages_list:list):
+def extractCodedContentFromRawMessages(raw_messages_list:list,stage=2):
     def extractHTMLMimeType(data):
         try:
             countOfParts=len(payload['parts'])
@@ -211,16 +213,23 @@ def extractCodedContentFromRawMessages(raw_messages_list:list):
             countOfParts=0
             logger.exception('key error prolly')
 
-        message_row = {"msgId":msg['id'],
-                        "threadId":msg['threadId'],
-                        "snippet":msg['snippet'],
-                        "mimeType":payload['mimeType'],
-                        "countOfParts":countOfParts,
-                        # "msgSize":payload['body']['size'],
-                        "msgEpochTime":msg['internalDate'],
-                        "msgEncodedData":data,}
+        if stage==1 or stage==2:
+            message_row = {"msgId":msg['id'],
+                            "threadId":msg['threadId'],
+                            "snippet":msg['snippet'],
+                            "mimeType":payload['mimeType'],
+                            "countOfParts":countOfParts,
+                            # "msgSize":payload['body']['size'],
+                            "msgEpochTime":msg['internalDate'],
+                            "msgEncodedData":data,}
 
-        return message_row
+            return message_row
+        elif stage==3:
+            message_row = {"msgId":msg['id'],
+                            "msgEpochTime":msg['internalDate'],
+                            "msgEncodedData":data,}
+
+            return message_row
 
     app.logger.info('Input messages to process: %s',len(raw_messages_list))
 
@@ -300,7 +309,7 @@ def extractBodyFromEncodedData(coded_relevant_json):
                 date,to_vpa,amount_debtied = getEmailBody(data)
                 message['date']= date
                 message['to_vpa']= to_vpa
-                message['amount_debtied']= amount_debtied
+                message['amount_debited']= amount_debtied
                 del message['msgEncodedData']
                 decoded_extracted_info.append(message)
             except Exception as e:
@@ -318,9 +327,9 @@ def extractBodyFromEncodedData(coded_relevant_json):
 def buildGmailService():
     c=GmailConnector()
     SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-    token_file = 'token.pickle'
-    credentials_file = 'creds.json'
-    sr= c.buildService(token_file,credentials_file,SCOPES)
+    token_file = 'token.pickle' #accept at runtime
+    credentials_file = 'creds.json' #load from config
+    sr= c.buildService(token_file,credentials_file,SCOPES) #
     return sr #service
 
 ##WORKFLOW
@@ -348,6 +357,14 @@ def getDateRange(st_date,end_date):
 
 ##Instance #2 when a bigger dump is required
 # customQuery = queryForDateRange('2023-01-01','2023-03-31')
+# WORKFLOW #2
+def getQueryForDateRange(st,end):
+    qg = QueryGenerator()
+    query= qg.get_mails_by_date_range(st,end)
+    logger.info('query generated.')
+    return query
+
+
 
 ##WORKFLOW #1
 def getQueryForLastDay():
@@ -357,7 +374,7 @@ def getQueryForLastDay():
     return query
 
 def fetchRawMessagesForQuery(query):
-    srvc = buildGmailService()
+    srvc = buildGmailService() #token
     app.logger.info('service built')
     ids = getMatchedThreadIdsForQuery(srvc,query)
     app.logger.info('ids to process: %s ',ids)
@@ -369,14 +386,14 @@ def fetchRawMessagesForQuery(query):
 
 
 def processRawMessagesWithStages(raw_messages,stage):
-    valid_stages = [0,1,2]
+    valid_stages = [0,1,2,3]
     if stage==0:
         logger.info('RAW stage requested..returning same as response')
         return raw_messages
-    elif 0<stage<=2:
+    elif 0<stage<=3:
         try:
             logger.info('%s stage requested. Processing...',stage)
-            coded_content_json = extractCodedContentFromRawMessages(raw_messages)
+            coded_content_json = extractCodedContentFromRawMessages(raw_messages,stage)
             logger.info('coded body extracted')
             if stage==1:
                 return coded_content_json
@@ -385,16 +402,34 @@ def processRawMessagesWithStages(raw_messages,stage):
                 logger.info('decoding the coded body & extracting Transaction info')
                 decoded_transaction_info = extractBodyFromEncodedData(coded_content_json) #big processing unit, split into chunks or make smaller
                 logger.info('coded body extracted')
-                if stage==2:
+                if stage>=2:
                     return decoded_transaction_info
+
                
         except Exception as e:
             return "ExtractionError: "
+
 
     else:
         return ("InvalidArgument: stage:",stage,"valid_stages",valid_stages)
 
 
+def cleanTransactionMessages(processed_messags):
+    df = pd.DataFrame(processed_messags)
+    # print(df.head())
+    # print(meta)
+    df.dropna(subset=['msgId','amount_debited'],inplace=True)
+    df['amount_debited']= pd.to_numeric(df['amount_debited'], errors='coerce')
+    # df['date'] =pd.to_datetime(df['date'],format='%d-%m-%Y')
+    df['date'] = df['date'].apply(lambda x : datetime.strptime(x,'%d-%m-%y'))
+    df = df.convert_dtypes(infer_objects=True)
+    # print(df.dtypes)
+    meta = {"rows":df.shape[0],
+            "sum":sum(df['amount_debited'].to_list())}
+    # print(df.columns)
+    # print(meta)
+    data = df.to_dict(orient='records')
+    return data
 # sr = buildGmailService()
 # print(dt_rng)
 
@@ -411,7 +446,7 @@ def getCheckpointRawMessages(json_path):
         raw_json = json.load(f)
     return raw_json
 
-messages = getCheckpointRawMessages('src/temp/emails_raw_2022-07-01_2022-09-30_325_.json')
+# messages = getCheckpointRawMessages('src/temp/emails_raw_2022-07-01_2022-09-30_325_.json')
 
 # coded = processRawMessagesWithStages(messages,2)
 # print(coded)
@@ -434,4 +469,66 @@ messages = getCheckpointRawMessages('src/temp/emails_raw_2022-07-01_2022-09-30_3
 # # df.to_csv('customQueryoutput.csv',index=False)
 # # df.to_csv('output.csv',index=False)
 # print(df)
+
+def commitToDb(data):
+
+
+    try:
+        clean_messages = cleanTransactionMessages(processed_messags=data)
+
+    except Exception as e:
+        return ("CleaningError: %s ",e)
+
+    if clean_messages:
+        with db.atomic():
+            res = Transactions.insert_many(data).execute()
+
+        print(type(res))
+        return res
+    else:
+        return "False"
+
+
+##WORKFLOW #3
+# def commitToDb(data):
+
+#     rng = data['range']
+#     response_checkpoint_level=data['stage']
+#     st,et=rng[0],rng[1]
+#     try:
+#         rangeQuery = getQueryForDateRange(st,et)
+
+#         app.logger.info('query: %s',rangeQuery)
+
+#         messages = fetchRawMessagesForQuery(rangeQuery)  #token will go here
+
+#     except Exception as e:
+#         logger.exception('WorkflowError: %s',e)
+#         return e
+
+#     if response_checkpoint_level==0:
+#         return messages
+#     else:
+#         pass  #to next try/catch
+    
+#     try:
+#         app.logger.info('processing response for the stage %s',response_checkpoint_level)
+#         processed_messages = processRawMessagesWithStages(messages,stage=response_checkpoint_level)  #give the stage argument to process up to the level
+#         # return processed_messages
+
+#     except Exception as e:
+#         return ("ProcessingError: %s",e)
+
+#     try:
+#         clean_messages = cleanTransactionMessages(processed_messags=processed_messages)
+
+#     except Exception as e:
+#         return ("CleaningError: %s ",e)
+
+#     if clean_messages:
+#         with db.atomic():
+#             res = Transactions.insert_many(data).execute()
+
+#         print(type(res))
+#         return 
 
