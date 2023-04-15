@@ -15,41 +15,41 @@ from src.models import Transactions,db
 fetchbaseurlget = 'http://localhost:105/api/v1/fetch/?range=lastday&stage=1'
 fetchbaseurlpost = 'http://localhost:105/api/v1/fetch/'
 
-# headers = {"Content-Type":'application/json'}
+headers = {"Content-Type":'application/json'}
 
-# # res = requests.get(fetchbaseurlget)
-# # coded_response =(res.json())
-# # print(res.json())
-# d ={  "range":['2023-03-01','2023-03-03'],"stage":3 }
-# # print(headers)
-# res_post = requests.post(fetchbaseurlpost,headers=headers,
-#                                         json=d
-#                                             )
-# txn_res =(res_post.json())
-# print((txn_res))
-# df = pd.DataFrame(txn_res)
-# meta = {"rows":df.shape[0],
-#         "sum":sum(pd.to_numeric(df['amount_debited'],errors='coerce').to_list())}
-# # print(df.head())
-# # print(meta)
-# df.dropna(subset=['msgId','amount_debited'],inplace=True)
-# df['amount_debited']= pd.to_numeric(df['amount_debited'], errors='coerce')
-# # df['date'] =pd.to_datetime(df['date'],format='%d-%m-%Y')
-# df['date'] = df['date'].apply(lambda x : datetime.strptime(x,'%d-%m-%y'))
-# df = df.convert_dtypes(infer_objects=True)
-# # print(df.dtypes)
-# meta = {"rows":df.shape[0],
-#         "sum":sum(df['amount_debited'].to_list())}
-# # print(df.columns)
-# # print(meta)
-# data = df.to_dict(orient='records')
-# # print(data)
+res = requests.get(fetchbaseurlget)
+coded_response =(res.json())
+print(res.json())
+d ={  "range":['2023-03-01','2023-03-03'],"stage":3 }
+# print(headers)
+res_post = requests.post(fetchbaseurlpost,headers=headers,
+                                        json=d
+                                            )
+txn_res =(res_post.json())
+print((txn_res))
+df = pd.DataFrame(txn_res)
+meta = {"rows":df.shape[0],
+        "sum":sum(pd.to_numeric(df['amount_debited'],errors='coerce').to_list())}
+# print(df.head())
+# print(meta)
+df.dropna(subset=['msgId','amount_debited'],inplace=True)
+df['amount_debited']= pd.to_numeric(df['amount_debited'], errors='coerce')
+# df['date'] =pd.to_datetime(df['date'],format='%d-%m-%Y')
+df['date'] = df['date'].apply(lambda x : datetime.strptime(x,'%d-%m-%y'))
+df = df.convert_dtypes(infer_objects=True)
+# print(df.dtypes)
+meta = {"rows":df.shape[0],
+        "sum":sum(df['amount_debited'].to_list())}
+# print(df.columns)
+# print(meta)
+data = df.to_dict(orient='records')
+# print(data)
 
-# # print(txn_res[0])
-# with db.atomic():
-#     res = Transactions.insert_many(df.to_dict(orient='records')).execute()
+# print(txn_res[0])
+with db.atomic():
+    res = Transactions.insert_many(df.to_dict(orient='records')).execute()
 
-# print(type(res))
+print(type(res))
 
 query = Transactions.select()
 output = []
