@@ -44,19 +44,23 @@ def index():
             }
             }
     # return jsonify({'hi'})
-    return jsonify(todo)
+    return render_template("index.html")
 
 
 
 
 ##google login
-@app.route('/',methods=['GET'])
+@app.route('/',methods=['GET','POST'])
 def login():
+    d=request.data
+    app.logger.info('body: %s',d)
     if google_auth.is_logged_in():
         user_info = google_auth.get_user_info()
+        app.logger.info(d)
         return '<div>You are currently logged in as ' + user_info['given_name'] + '<div><pre>' + json.dumps(user_info, indent=4) + "</pre>"
     else:
-        return 'You are not currently logged in.'
+        return render_template("index.html")
+    # 'You are not currently logged in.'
     # return jsonify({'hi'})
 
 

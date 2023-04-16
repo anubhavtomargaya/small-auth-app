@@ -5,9 +5,10 @@ https://www.mattbutton.com/2019/01/05/google-authentication-with-python-and-flas
 
 
 import functools
+import json
 import os
 import flask 
-
+from flask import current_app, url_for
 import logging
 logger= logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -82,7 +83,7 @@ def no_cache(view):
 @app.route('/google/login')
 @no_cache
 def login():
-    logger.info('building session')
+    current_app.logger.info('building session')
     session = OAuth2Session(CLIENT_ID, CLIENT_SECRET,
                             scope=AUTHORIZATION_SCOPE,
                             redirect_uri=AUTH_REDIRECT_URI)
@@ -110,14 +111,17 @@ def google_auth_redirect():
                                 redirect_uri=AUTH_REDIRECT_URI)
     except Exception as e:
         return flask.jsonify(e)
+    current_app.logger.info('session')
         
     oauth2_tokens = session.fetch_access_token(
                         ACCESS_TOKEN_URI,            
                         authorization_response=flask.request.url)
 
     flask.session[AUTH_TOKEN_KEY] = oauth2_tokens
-
-    return flask.redirect(BASE_URI, code=302)
+    current_app.logger.info('oath tokens!! : %s',oauth2_tokens)
+    import json
+    d=json.dumps({"h":1})
+    return flask.redirect(url_for('google_auth.etc',data=oauth2_tokens), code=307)
 
 @app.route('/google/logout')
 @no_cache
@@ -126,3 +130,36 @@ def logout():
     flask.session.pop(AUTH_STATE_KEY, None)
 
     return flask.redirect(BASE_URI, code=302)
+
+import ast
+import pathlib
+@app.route('/google/etc')
+def etc():
+    d='a'
+    d=flask.request.data
+    d=flask.request.args['data']
+    dew=json.loads(json.dumps(d))
+    dew = ast.literal_eval(d)
+    current_app.logger.info('body: %s',dew)
+    current_app.logger.info('type: %s',type(dew))
+    if is_logged_in():
+        user_info = get_user_info()
+        current_app.logger.info(user_info)
+        name=user_info['given_name']
+        expiresat=dew['expires_at']
+        val=dew['access_token'][0:6]
+        curr_pth = pathlib.Path(__file__).resolve().parent
+        tkdir = pathlib.Path('temp','etc')
+        filename=f'token_{name}_{val}_{expiresat}_.json'
+      
+        filepath = pathlib.Path(curr_pth,tkdir,filename)
+        with open(filepath,'w') as f:
+            print(json.dump(dew,f))
+
+        return flask.redirect(BASE_URI, code=302)
+    # '<div>You are currently logged in as ' + user_info['given_name'] + '<div><pre>' + json.dumps(user_info, indent=4) + "</pre>"
+    else:
+        # return render_template("index.html")
+
+        return flask.jsonify("ERORROR )")
+
