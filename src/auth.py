@@ -35,7 +35,7 @@ CLIENT_SECRET = "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"
 # os.environ.get("FN_CLIENT_SECRET", default=False)
 
 AUTH_TOKEN_KEY = 'auth_token'
-AUTH_STATE_KEY = 'auth_state'
+AUTH_STATE_KEY = 'oauth_state'
 
 app = flask.Blueprint('google_auth', __name__)
 
