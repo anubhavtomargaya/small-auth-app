@@ -37,14 +37,14 @@ class QueryGenerator:
 
                 
     def __init__(self) -> None:
-        self.curr_date_time =datetime.now()
+        self.curr_date_time =datetime.utcnow()
         self.start_time = None
         self.end_time = None
         self.qry = None
     
     def get_last_n_days_mails_by_label(self,days,label='hdfc'):
         if label=='hdfc':
-            self.start_time= self.curr_date_time.replace(minute=0,microsecond=0,hour=0,second=0) 
+            self.start_time= self.curr_date_time.replace(minute=0,microsecond=0,hour=0,second=0)  + timedelta(days=1)
             self.end_time = self.curr_date_time -timedelta(days=days)
             qry = f""" 
             label:hdfc  after:{self.end_time.strftime('%Y-%m-%d')} before:{self.start_time.strftime('%Y-%m-%d')} 
