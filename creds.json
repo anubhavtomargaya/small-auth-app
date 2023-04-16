@@ -10,7 +10,7 @@
             "http://localhost/",
             "http://localhost:5000/",
             "http://localhost:60054/",
-            "http://localhost:60047/"
+            "http://localhost:60047/","http://localhost:5000/google/auth/"
         ]
     }
 }

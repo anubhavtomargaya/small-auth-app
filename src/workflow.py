@@ -387,13 +387,22 @@ def getQueryForLastDay():
     logger.info('query generated.')
     return query
 
+
 def fetchRawMessagesForQuery(query):
-    srvc = buildGmailService() #token
-    app.logger.info('service built')
-    ids = getMatchedThreadIdsForQuery(srvc,query)
-    app.logger.info('ids to process: %s ',ids)
-    #independent of query after this point-
-    messages = get_messages_data_from_threads(srvc,ids)
+    try:
+
+        srvc = buildGmailService() #token
+        app.logger.info('service built')
+    except Exception as e:
+        return e
+    # app.logger.info('service %s  %s ',type(srvc),srvc)
+    try:
+        ids = getMatchedThreadIdsForQuery(srvc,query)
+        app.logger.info('ids to process: %s ',ids)
+        #independent of query after this point-
+        messages = get_messages_data_from_threads(srvc,ids)
+    except Exception as e:
+        return e
     logger.info('processed all messages: %s \n type : %s',len(messages),type(messages))
     return messages
 
