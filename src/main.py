@@ -103,9 +103,15 @@ def fetchTransactionEmailsFromGmail():
                 lastDayQuery = getQueryForLastDay()
                 app.logger.info('query: %s',lastDayQuery)
                 messages = fetchRawMessagesForQuery(lastDayQuery) 
+                app.logger.info('msgs: %s',type(messages))
+                if messages:
+                    pass
+                else:
+                    return jsonify("FetchingError %s",e)
 
             except Exception as e:
                 logger.exception('WorkflowError: %s',e)
+                return jsonify("FetchingError %s",e)
 
             if response_checkpoint_level==0:
                 return jsonify(messages)
