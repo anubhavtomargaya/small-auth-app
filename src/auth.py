@@ -99,10 +99,10 @@ def login():
 @no_cache
 def google_auth_redirect():
     req_state = flask.request.args.get('state', default=None, type=None)
-
-    if req_state != flask.session[AUTH_STATE_KEY]:
-        response = flask.make_response('Invalid state parameter', 401)
-        return response
+    current_app.logger.info('state!!: %s',req_state)
+    # if req_state != flask.session[AUTH_STATE_KEY]:
+    #     response = flask.make_response('Invalid state parameter', 401)
+    #     return response
     try:
         logger.info('creating session')
         session = OAuth2Session(CLIENT_ID, CLIENT_SECRET,
@@ -148,13 +148,13 @@ def etc():
         name=user_info['given_name']
         expiresat=dew['expires_at']
         val=dew['access_token'][0:6]
-        curr_pth = pathlib.Path(__file__).resolve().parent
-        tkdir = pathlib.Path('temp','etc')
-        filename=f'token_{name}_{val}_{expiresat}_.json'
+        # curr_pth = pathlib.Path(__file__).resolve().parent
+        # tkdir = pathlib.Path('temp','etc')
+        # filename=f'token_{name}_{val}_{expiresat}_.json'
       
-        filepath = pathlib.Path(curr_pth,tkdir,filename)
-        with open(filepath,'w') as f:
-            print(json.dump(dew,f))
+        # filepath = pathlib.Path(curr_pth,tkdir,filename)
+        # with open(filepath,'w') as f:
+            # print(json.dump(dew,f))
 
         return flask.redirect(BASE_URI, code=302)
     # '<div>You are currently logged in as ' + user_info['given_name'] + '<div><pre>' + json.dumps(user_info, indent=4) + "</pre>"
