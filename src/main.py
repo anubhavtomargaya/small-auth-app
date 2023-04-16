@@ -83,7 +83,7 @@ def fetchTransactionEmailsFromGmail():
         if args.get('range'):
             query_range_str = args.get('range') #1
         else:
-    
+
             return jsonify("MissingArgument: Arguements 'range' missing")
 
         if args.get('stage'):
