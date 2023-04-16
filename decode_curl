@@ -1,0 +1,8 @@
+curl --location --request POST 'http://13.212.228.249:5000/api/v1/decode/' \
+--header 'Content-Type: application/json' \
+--data-raw '[
+    {
+        "msgEncodedData": ""
+        "msgId": ""
+    }
+]'
