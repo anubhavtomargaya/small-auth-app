@@ -155,6 +155,8 @@ def etc():
         # filepath = pathlib.Path(curr_pth,tkdir,filename)
         # with open(filepath,'w') as f:
             # print(json.dump(dew,f))
+        
+        ###check if not able to save file in ec2
 
         return flask.redirect(BASE_URI, code=302)
     # '<div>You are currently logged in as ' + user_info['given_name'] + '<div><pre>' + json.dumps(user_info, indent=4) + "</pre>"
