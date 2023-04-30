@@ -36,6 +36,17 @@ class Transactions(BaseModel):
         table_name = 'transactions_02'
 
 
+class VPA(BaseModel):
+    id = AutoField() #change to the upstream txn primary key 
+    vpa_user=TextField(unique=True)
+    vpa_provider = TextField()
+    category =  TextField(null=True)
+    additional_category_1 = TextField(null=True, default=None)
+    additional_category_2 = TextField(null=True,default=None)
+
+    class Meta:
+        table_name = 'vpa'
+
 class InsertResponse():
     
     def __init__(self) -> None:
@@ -43,7 +54,7 @@ class InsertResponse():
         self.failed_insert = []
 
 
-# db.create_tables([Transactions])
+# db.create_tables([Transactions,VPA])
 # print(db.get_tables())
 # print(db.drop_tables([Transactions]))
 # print(db.get_tables())
