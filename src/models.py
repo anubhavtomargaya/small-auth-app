@@ -22,6 +22,17 @@ class BaseModel(Model):
     class Meta:
         database = db
 
+class RawTransactions(BaseModel):
+    txn_id = AutoField() #change to the upstream txn primary key 
+    msgId=TextField(unique=True)
+    msgEpochTime = BigIntegerField()
+    msgSnippet = TextField()
+    encodedMsg = TextField()
+    
+    class Meta:
+        table_name = 'raw_transactions'
+
+
 class Transactions(BaseModel):
     txn_id = AutoField() #change to the upstream txn primary key 
     msgId=TextField(unique=True)
@@ -39,13 +50,24 @@ class Transactions(BaseModel):
 class VPA(BaseModel):
     id = AutoField() #change to the upstream txn primary key 
     vpa_user=TextField(unique=True)
-    vpa_provider = TextField()
+    vpa_provider = TextField(null=True)
     category =  TextField(null=True)
     additional_category_1 = TextField(null=True, default=None)
     additional_category_2 = TextField(null=True,default=None)
 
     class Meta:
         table_name = 'vpa'
+
+##not working, materialise the table or find other way to map view output to class.
+class TransactionsView(BaseModel):
+    msgId = TextField(unique=True)
+    date = DateField(formats=['%d-%m-%Y','%Y-%m-%d']) #give format according to upstream
+    vpa_user = TextField(225)
+    category =  TextField(null=True)
+    amount_debited = DecimalField()
+
+    class Meta:
+        table_name = 'transactions_vw'
 
 class InsertResponse():
     
@@ -56,7 +78,7 @@ class InsertResponse():
 
 # db.create_tables([Transactions,VPA])
 # print(db.get_tables())
-# print(db.drop_tables([Transactions]))
+# print(db.drop_tables([VPA]))
 # print(db.get_tables())
 # query = Transactions.select()
 # output = []
