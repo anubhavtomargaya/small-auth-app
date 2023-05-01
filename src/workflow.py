@@ -1,5 +1,6 @@
 from datetime import datetime 
 from datetime import timedelta
+from flask import current_app
 import json
 import os
 from pathlib import Path,PurePath
@@ -309,9 +310,9 @@ def extractBodyFromEncodedData(coded_relevant_json):
         return date,to_vpa,amount_debtied
    
     try:
-        app.logger.info('type of input %s',type(coded_relevant_json))
+        current_app.logger.info('type of input %s',type(coded_relevant_json))
         count = len(coded_relevant_json)
-        app.logger.info('size of input messages %s',count)
+        current_app.logger.info('size of input messages %s',count)
         decoded_extracted_info = []
         # coded_relevant_json=list(coded_relevant_json)
         for message in coded_relevant_json:
@@ -327,7 +328,7 @@ def extractBodyFromEncodedData(coded_relevant_json):
                 del message['msgEncodedData']
                 decoded_extracted_info.append(message)
             except Exception as e:
-                app.logger.exception('error extracting message id %s,',e)
+                current_app.logger.exception('error extracting message id %s,',e)
                 return ("ExtractionError:",e)
 
             
@@ -415,16 +416,16 @@ def processRawMessagesWithStages(raw_messages,stage):
         return raw_messages
     elif 0<stage<=3:
         try:
-            logger.info('%s stage requested. Processing...',stage)
+            app.logger.info('%s stage requested. Processing...',stage)
             coded_content_json = extractCodedContentFromRawMessages(raw_messages,stage)
-            logger.info('coded body extracted')
+            app.logger.info('coded body extracted')
             if stage==1:
                 return coded_content_json
             else:
 
-                logger.info('decoding the coded body & extracting Transaction info')
+                app.logger.info('decoding the coded body & extracting Transaction info')
                 decoded_transaction_info = extractBodyFromEncodedData(coded_content_json) #big processing unit, split into chunks or make smaller
-                logger.info('coded body extracted')
+                app.logger.info('coded body extracted')
                 if stage>=2:
                     return decoded_transaction_info
 
