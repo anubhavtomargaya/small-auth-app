@@ -2,7 +2,7 @@ from peewee import *
 
 from peewee import *
 import logging
-
+from workflow import getEmailBody
 from config import username,password,database_name,endpoint
 
 # db= MySQLDatabase(database_name,username ,password,endpoint)

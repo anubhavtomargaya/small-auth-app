@@ -70,7 +70,7 @@ def login():
 
 @app.route('/api/v1/fetch/',methods=['GET','POST'])
 def fetchTransactionEmailsFromGmail():
-    start_time = datetime.utcnow()
+    start_time = datetime.datetime.utcnow()
     mthd = request.method 
     args = request.args
     # if (content_type == 'application/json'):
@@ -143,81 +143,172 @@ def fetchTransactionEmailsFromGmail():
             # host =  request.headers.get('authtoken') #take auth token at runtime and call the service with this token
             agent =  request.headers.get('User-Agent')
             app.logger.info('host: %s \n agent: %s \n',host,agent)
+            valid_checkoints=[0,2,1,3]
+            if response_checkpoint_level in valid_checkoints:
+                pass
+
+            else:
+                return jsonify("ArgsError: 'stage'")
+
             try:
                 rangeQuery = getQueryForDateRange(st,et)
 
                 app.logger.info('query: %s',rangeQuery)
 
-                messages = fetchRawMessagesForQuery(rangeQuery)  #token will go here
+                messages = fetchRawMessagesForQuery(rangeQuery) 
+                raw_file_name = f"RAW - {str(datetime.datetime.now())}_.json"
+                 #token will go here
+                current_app.logger.info('Saving RAW MESSAGES')
+                with open(raw_file_name, 'w') as f:
+                    json.dump(messages,f)
+                current_app.logger.info('.........SAVED')
 
             except Exception as e:
                 logger.exception('WorkflowError: %s',e)
                 return jsonify(e)
 
             if response_checkpoint_level==0:
+                #returns without posting/saving anything.
                 return jsonify(messages)
+            #goes on to extract data part
+            elif 0<response_checkpoint_level<=3:
+                # try:
+                    app.logger.info('%s stage requested. Processing...',response_checkpoint_level)
+                    coded_content_json = extractCodedContentFromRawMessages(messages)
+                    app.logger.info('coded body extracted')
+             ##INSERT PART STRT
+                    if coded_content_json:
+                        try:
+                            response = InsertResponse()
+                            with db.atomic():
+                                for data_dict in coded_content_json:
+                                    try:
+                                        # print(data_dict)
+                                        res= RawTransactions.create(**data_dict)
+                                        res.save()
+                                        response.success_inserts.append(data_dict['msgId'])
+                                    except Exception as e:
+                                        app.logger.exception('Insert error in %s \n error: %s ',data_dict['msgId'],e)
+                                        response.failed_insert.append(data_dict['msgId'])
+        
+                                # res = Transactions.insert_many(data).execute()
+                            
+                            # print(type(res))
+                            insert_response = {"status":True,
+                                                "timespan":str(datetime.datetime.utcnow() - start_time),
+                                                "success_inserts":response.success_inserts,
+                                                "failed_inserts":response.failed_insert
+                                                }
+                            # return jsonify(insert_response)
+                            app.logger.info('coded body Inserted')
+                        except Exception as e:
+                            app.logger.exception('coded body Insert ERROR')
+                    #     return jsonify(res)
+                    else:
+                        app.logger.info('No coded body ')
+             ##INSERT PART DONE
+                        
+                        # return jsonify('False')
+                    if response_checkpoint_level==1:
+                        return coded_content_json
+                    else:
+
+                        current_app.logger.info('decoding the coded body & extracting Transaction info')
+                        decoded_transaction_info = extractBodyFromEncodedData(coded_content_json) #big processing unit, split into chunks or make smaller
+                        app.logger.info('coded body extracted')
+                        
+                     ##INSERT PART STRT
+                        try:
+                            # app.logger.info('processing response for the stage %s',response_checkpoint_level)
+                            
+                            # processed_messages = processRawMessagesWithStages(messages,stage=response_checkpoint_level)  #give the stage argument to process up to the level
+                            current_app.logger.info("Processed messages received")
+                            def cleanTxnsBeforeInserting(decoded_transaction_info):
+                                df = pd.DataFrame(decoded_transaction_info)
+                                # print(df.head())
+                                # print(meta)
+                                df.dropna(subset=['msgId','amount_debited'],inplace=True)
+                                df['amount_debited']= pd.to_numeric(df['amount_debited'], errors='coerce')
+                                # df['date'] =pd.to_datetime(df['date'],format='%d-%m-%Y')
+                                df['date'] = df['date'].apply(lambda x : datetime.strptime(x,'%d-%m-%y'))
+                                df = df.convert_dtypes(infer_objects=True)
+                                # print(df.dtypes)
+                                meta = {"rows":df.shape[0],
+                                        "sum":sum(df['amount_debited'].to_list())}
+                                # print(df.columns)
+                                # print(meta)
+                                data = df.to_dict(orient='records')
+                                
+
+                                return data
+                            # try:
+                            #     data = cleanTxnsBeforeInserting(decoded_transaction_info)
+                            # except Exception as e:
+                            #     current_app.logger.exception("Cleaning Error")
+                            data = decoded_transaction_info
+                            try:
+                                if data:
+                                    response = InsertResponse()
+                                    with db.atomic():
+                                        for data_dict in data:
+                                            try:
+                                                # print(data_dict)
+                                                res= Transactions.create(**data_dict)
+                                                res.save()
+                                                response.success_inserts.append(data_dict['msgId'])
+                                            except Exception as e:
+                                                app.logger.exception('Insert error in %s \n error: %s ',data_dict['msgId'],e)
+                                                response.failed_insert.append(data_dict['msgId'])
+                
+                                        # res = Transactions.insert_many(data).execute()
+                                    
+                                    # print(type(res))
+                                    insert_response = {"status":True,
+                                                        "timespan":str(datetime.datetime.utcnow() - start_time),
+                                                        "success_inserts":response.success_inserts,
+                                                        "failed_inserts":response.failed_insert
+                                                        }
+                                    return jsonify(insert_response)
+                                #     return jsonify(res)
+                                else:
+                                    return jsonify('no data returned from cleaning')
+                            except Exception as e:
+                                return  jsonify("DBInsertError: %s",e)
+
+                        except Exception as e:
+                            return jsonify("ProcessingError: %s",e)
+                        
+                        if response_checkpoint_level>=2:
+                            return decoded_transaction_info
             else:
                 pass  #to next try/catch
             
-            try:
-                app.logger.info('processing response for the stage %s',response_checkpoint_level)
-                processed_messages = processRawMessagesWithStages(messages,stage=response_checkpoint_level)  #give the stage argument to process up to the level
-                # app.logger.info(type(processed_messages))
-                try:
-                    df = pd.DataFrame(processed_messages)
-                    # print(df.head())
-                    # print(meta)
-                    df.dropna(subset=['msgId','amount_debited'],inplace=True)
-                    df['amount_debited']= pd.to_numeric(df['amount_debited'], errors='coerce')
-                    # df['date'] =pd.to_datetime(df['date'],format='%d-%m-%Y')
-                    df['date'] = df['date'].apply(lambda x : datetime.strptime(x,'%d-%m-%y'))
-                    df = df.convert_dtypes(infer_objects=True)
-                    # print(df.dtypes)
-                    meta = {"rows":df.shape[0],
-                            "sum":sum(df['amount_debited'].to_list())}
-                    # print(df.columns)
-                    # print(meta)
-                    data = df.to_dict(orient='records')
-                    
-                    
-                    if data:
-                        response = InsertResponse()
-                        with db.atomic():
-                            for data_dict in data:
-                                try:
-                                    # print(data_dict)
-                                    res= Transactions.create(**data_dict)
-                                    res.save()
-                                    response.success_inserts.append(data_dict['msgId'])
-                                except Exception as e:
-                                    app.logger.exception('Insert error in %s \n error: %s ',data_dict['msgId'],e)
-                                    response.failed_insert.append(data_dict['msgId'])
-    
-                            # res = Transactions.insert_many(data).execute()
-                        
-                        # print(type(res))
-                        insert_response = {"status":True,
-                                            "timespan":str(datetime.utcnow() - start_time),
-                                            "success_inserts":response.success_inserts,
-                                            "failed_inserts":response.failed_insert
-                                            }
-                        return jsonify(insert_response)
-                    #     return jsonify(res)
-                    else:
-                        return jsonify('False')
-                except Exception as e:
-                    return  jsonify("DBInsertError: %s",e)
-
-            except Exception as e:
-                return jsonify("ProcessingError: %s",e)
+            
 
         except Exception as e:
-            return jsonify(e)
+
+            return jsonify("UnidentifiedError:",e)
         # except Exception as e:
         #     return jsonify("TypeError: Content-Type not supported!")
 
         
- 
+@app.route('/api/v1/getEmailBody/',methods=['GET'])
+def getEmailsBody():
+    mthd = request.method 
+    hdrs = request.headers
+    data = request.json
+
+    if mthd == 'GET':
+        body = getEmailBody(data[0]['codata'])
+        return jsonify(body)
+        # app.logger.info('args: %s',args)
+        ###read arguements
+        # if args.get('range'):
+        #     query_range_str = args.get('range') #1
+        # else:
+
+        #     return jsonify("MissingArgument: Arguements 'range' missing")
+
 
 
 @app.route('/api/v1/decode/',methods=['POST'])
