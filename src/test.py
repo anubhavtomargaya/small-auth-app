@@ -1,4 +1,3 @@
-from peewee import *
 
 from peewee import *
 import logging

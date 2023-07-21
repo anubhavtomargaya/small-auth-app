@@ -21,7 +21,7 @@ ACCESS_TOKEN_URI = "https://oauth2.googleapis.com/token"
 AUTHORIZATION_URL = "https://accounts.google.com/o/oauth2/auth"
 #  'https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&prompt=consent'
 
-AUTHORIZATION_SCOPE =["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"]
+AUTHORIZATION_SCOPE =["https://www.googleapis.com/auth/gmail.readonly","https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"]
 # 'openid email profile'
 # ['https://www.googleapis.com/auth/gmail.readonly','openid','email']
 
