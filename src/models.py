@@ -34,6 +34,17 @@ class RawTransactions(BaseModel):
     
     class Meta:
         table_name = 'raw_transactions'
+
+class RawTransactionsV1(BaseModel):
+    msgId=TextField(unique=True)
+    threadId=TextField()
+    snippet=TextField(null=True)
+    msgEpochTime = BigIntegerField()
+    msgEncodedData = TextField()
+    msghistoryId=IntegerField(null=True)
+    
+    class Meta:
+        table_name = 'raw_transactionsv1'
 ##being used as a reporting layer of the transaction but the non null fields are problematic 
 ##so the data would not be processed on the server. Errors are destined for this endeavour.
 # class Transactions(BaseModel):

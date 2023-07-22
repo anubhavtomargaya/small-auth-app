@@ -42,6 +42,9 @@ class QueryGenerator:
         self.start_time = None
         self.end_time = None
         self.qry = None
+
+    def get_by_email(self,email,st,et):pass
+
     
     def get_last_n_days_mails_by_label(self,days,label='hdfc'):
         if label=='hdfc':
@@ -69,8 +72,9 @@ class GmailConnector:
         self.creds = None
         self.credentials_file = None
         self.scopes = None
-        
+        self.service = None
 
+    
     def buildService(self,token_file,credentials_file,SCOPES):  
         if os.path.exists(token_file):
             # Read the token from the file and store it in the variable self.self.creds
@@ -261,6 +265,7 @@ def payloadDataMapper(data):
     except Exception as e:
         current_app.logger.info("PayloadEMapperError")
         pass
+
 def extractCodedContentFromRawMessages(raw_messages_list:list):
     """Works like mapper for RAW MESSAGES
     Args:
@@ -339,6 +344,7 @@ def getEmailBody(coded_body):
     return email_body
     # date,to_vpa,amount_debtied = getContentsFromBody(email_body)
     # return date,to_vpa,amount_debtied
+
 
 def extractBodyFromEncodedData(coded_relevant_json):
     if not isinstance(coded_relevant_json,list):
@@ -448,8 +454,9 @@ def fetchRawMessagesForQuery(query):
     try:
 
         srvc = buildGmailService() #token
-        app.logger.info('service built')
+        current_app.logger.info('service built')
     except Exception as e:
+        current_app.logger.exception('service not built')
         return e
     # app.logger.info('service %s  %s ',type(srvc),srvc)
     try:
