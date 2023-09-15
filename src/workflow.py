@@ -389,7 +389,7 @@ def getQueryForLastDay():
     return query
 
 
-def fetchRawMessagesForQuery(query):
+def fetchRawMessagesForQuery(query,token):
     try:
 
         srvc = buildGmailService() #token

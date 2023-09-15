@@ -21,7 +21,7 @@ ACCESS_TOKEN_URI = "https://oauth2.googleapis.com/token"
 AUTHORIZATION_URL = "https://accounts.google.com/o/oauth2/auth"
 #  'https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&prompt=consent'
 
-AUTHORIZATION_SCOPE =["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"]
+AUTHORIZATION_SCOPE =[ 'https://www.googleapis.com/auth/gmail.readonly',"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"]
 # 'openid email profile'
 # ['https://www.googleapis.com/auth/gmail.readonly','openid','email']
 
@@ -68,6 +68,21 @@ def get_user_info():
     except Exception as e:
         logger.exception('building credentials failed')
         return flask.jsonify(e)
+
+def get_user_threads(query):
+    
+    try:
+        logger.info('building credentials')
+        credentials = build_credentials()
+
+        oauth2_client = googleapiclient.discovery.build(
+                            'gmail', 'v1',
+                            credentials=credentials)
+        return  oauth2_client.users().threads().list(userId='me',q= query, maxResults=400).execute().get('threads', [])
+    except Exception as e:
+        logger.exception('building credentials failed')
+        return flask.jsonify(e)
+
 
 def no_cache(view):
     @functools.wraps(view)

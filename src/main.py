@@ -87,6 +87,17 @@ def fetchTransactionEmailsFromGmail():
         if args.get('range'):
             query_range_str = args.get('range') #1
         else:
+            if google_auth.is_logged_in():
+                lastDayQuery = getQueryForLastDay()
+                st='2023-09-01'
+                et='2023-09-10'
+                rangeQuery = getQueryForDateRange(st,et)
+                user_info = google_auth.get_user_threads(rangeQuery)
+                # app.logger.info(d)
+                
+                return  jsonify(json.dumps(user_info) )
+            else:
+                return jsonify("LOGIN REQUIRED")
 
             return jsonify("MissingArgument: Arguements 'range' missing")
 
