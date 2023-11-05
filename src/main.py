@@ -5,10 +5,11 @@ from flask_cors import CORS,cross_origin
 # from app import app
 import requests
 from workflow import *
-from decode import decode
-from gmail_fetcher import GmailFetcher
+from wf_decode import decode
+from gmail_fetcher import GmailFetcher,GmailQuery
 
-
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request as GReq
 from models import *
 from peewee import IntegrityError
 
@@ -72,8 +73,44 @@ def login():
     app.logger.info('body: %s',d)
     if google_auth.is_logged_in():
         user_info = google_auth.get_user_info()
+        creds = google_auth.build_credentials()
         app.logger.info(d)
-        return '<div>You are currently logged in as ' + user_info['given_name'] + '<div><pre>' + json.dumps(user_info, indent=4) + "</pre>"
+        return '<div>You are logged in! <div><pre>' + json.dumps(user_info, indent=4) + "</pre>"
+        # return '<div>You are currently logged in as ' + user_info['given_name'] + '<div><pre>' + json.dumps(user_info, indent=4) + "</pre>"
+    else:
+        return render_template("index.html")
+    # 'You are not currently logged in.'
+    # return jsonify({'hi'})
+
+@app.route('/fetch',methods=['GET'])
+def fetch():
+    if google_auth.is_logged_in():
+        # user_info = google_auth.get_user_info()
+        st = request.args.get('start_')
+        et = request.args.get('end_')
+        current_app.logger.info("st et %s %s ",st,et)
+        if not st or not et:
+            st = '2023-11-06'
+            et = '2023-11-10'
+        creds = google_auth.build_credentials()
+        current_app.logger.info("creds",creds)
+        q = GmailQuery(st,et,from_='alerts@hdfcbank.net')
+        e = GmailFetcher()
+        e.gmail_service = build('gmail', 'v1', credentials=creds)
+        current_app.logger.info("service: %s" , e.gmail_service)
+        threads = google_auth.get_matched_emails(q)
+        messages = e.fetch(st,et)
+        # current_app.logger.info('msgs %s',e.qry)
+        current_app.logger.info('TYPE %s',type(threads))
+        current_app.logger.info('obj %s',threads)
+        # current_app.logger.info('red %s',creds.refresh(GReq()))
+        current_app.logger.info('threads %s',len(threads))
+        current_app.logger.info('msgs %s',len(messages))
+        list_of_dicts = [{attr: getattr(obj, attr) for attr in vars(obj)} for obj in messages]
+        list_of_smaller_dicts = extractCodedContentFromRawMessages(list_of_dicts)
+
+        return '<div>your creds <div><pre> ' + json.dumps(list_of_smaller_dicts, indent=4) + "</pre>"
+        # return '<div>You are currently logged in as ' + user_info['given_name'] + '<div><pre>' + json.dumps(user_info, indent=4) + "</pre>"
     else:
         return render_template("index.html")
     # 'You are not currently logged in.'
@@ -169,13 +206,6 @@ def fetchTransactionEmailsFromGmail():
             agent =  request.headers.get('User-Agent')
             app.logger.info('host: %s \n agent: %s \n',host,agent)
           
-            
-            # try:
-            #     datetime.date.fromisoformat(st)
-            #     datetime.date.fromisoformat(et)
-            #     print(True)
-            # except ValueError:
-            #     raise ValueError("Incorrect data format, should be YYYY-MM-DD")
 
 
             try:
@@ -345,10 +375,11 @@ def getEmailsBody():
 
 @app.route('/api/v1/decode/',methods=['POST'])
 def decodeGmailResponse():
-    current_app.logger.info('req, %s',request)
+    # current_app.logger.info('req, %s',request)
     mthd = request.method 
     content_type = request.headers.get('Content-Type')
     userid = request.headers.get('userid')
+
     if (content_type == 'application/json'):
         body = request.get_json()
 
@@ -360,7 +391,7 @@ def decodeGmailResponse():
     if mthd == 'POST' and body:
         try:
             current_app.logger.info('decoding & extracting transaction details: %s' ,type(body))
-            
+            #wf_decode returns list of decoded txns
             decoded_transaction_info = decode(body)
             res = [tx.__dict__ for tx in decoded_transaction_info]
             return jsonify(res)

@@ -3,12 +3,12 @@
 
 from flask import Request, current_app
 from datetime import datetime ,timedelta
-from workflow import GmailConnector
-
+# from workflow import GmailConnector
+from gconn import GmailConnector
 import logging  
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
+# logger = current_app.logger
 from abc import ABC
 
 class RawMessage(object):
@@ -24,7 +24,7 @@ class RawMessage(object):
     
 
 
-
+from googleapiclient.discovery import build
 
 class GmailQuery(object):
     """give start and end time in date format '%Y-%m-%d'
@@ -58,18 +58,13 @@ class GmailQuery(object):
 
 
 class GmailFetcher:
-    def __init__(self) -> None:
+    def __init__(self,token=None) -> None:
+        self.token = token
         self.gmail_service  = None
         self.ids =[]
         self.messages_output=[]
         self.qry = None
-    def buildGmailService(self):
-        c=GmailConnector()
-        SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-        token_file = 'token.pickle' #accept at runtime
-        credentials_file = 'creds.json' #load from config
-        self.gmail_service= c.buildService(token_file,credentials_file,SCOPES) #
-        return True
+
 
     def getMatchedThreadIdsForQuery(self,query:GmailQuery):
 
@@ -114,7 +109,7 @@ class GmailFetcher:
             logger.exception('List of Ids expected')
             raise TypeError('List of Ids expected')
     
-    def fetch(self,st,et):
+    def fetch(self,st,et,creds=None):
         """generates the query using st,et; builds gmail service using stored token and credentials. 
         fetches the matched ids from gmail. fetches raw message for all the messages contained in threads.
 
@@ -130,15 +125,32 @@ class GmailFetcher:
         print(q.__str__())
         logger.info('query generated: %s',q.__str__())
         self.qry = q.__str__()
-        try:
+        if creds:
+            logger.info('building gmail client')
+            logger.info('building gmail client')
+            self.service = build('gmail', 'v1', credentials=creds)
+        
+            
+        else:pass
+    
+            # try:
+            #     if self.token:
+            #         cn = GmailConnector() #token
+            #         self.gmail_service = cn.buildClientFromToken(self.token)
+            #         logger.info('service built')
+            #     else:
+            #         c=GmailConnector()
+            #         token_file = 'token.pickle' 
+            #         self.gmail_service= c.buildService(token_file) #
 
-            self.buildGmailService() #token
-            logger.info('service built')
-        except Exception as e:
-            logger.exception('service not built')
-            return e
+            # except Exception as e:
+            #     logger.exception('gmail client not built')
+            #     return e
         # app.logger.info('service %s  %s ',type(srvc),srvc)
         try:
+            if not self.gmail_service:
+                raise ValueError("Cant find service!!")
+            
             ids = self.getMatchedThreadIdsForQuery(q)
             logger.info('ids to process: %s ',ids)
             #independent of query after this point-

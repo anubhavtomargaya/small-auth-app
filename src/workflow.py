@@ -75,6 +75,7 @@ class GmailConnector:
         self.service = None
 
     
+
     def buildService(self,token_file,credentials_file,SCOPES):  
         if os.path.exists(token_file):
             # Read the token from the file and store it in the variable self.self.creds
