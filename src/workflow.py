@@ -7,14 +7,14 @@ from pathlib import Path,PurePath
 import pickle
 import re
 from app import app
-from models import Transactions
+from models import Transactions, RawTransactions
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from bs4 import BeautifulSoup
 import base64
 from models import db
-# from playhouse.shortcuts import model_to_dict, dict_to_model
+from playhouse.shortcuts import model_to_dict, dict_to_model
 import pandas as pd
 import logging
 logger = logging.getLogger(__name__)
@@ -42,6 +42,9 @@ class QueryGenerator:
         self.start_time = None
         self.end_time = None
         self.qry = None
+
+    def get_by_email(self,email,st,et):pass
+
     
     def get_last_n_days_mails_by_label(self,days,label='hdfc'):
         if label=='hdfc':
@@ -69,7 +72,9 @@ class GmailConnector:
         self.creds = None
         self.credentials_file = None
         self.scopes = None
-        
+        self.service = None
+
+    
 
     def buildService(self,token_file,credentials_file,SCOPES):  
         if os.path.exists(token_file):
@@ -203,117 +208,163 @@ def get_messages_data_from_threads(service,ids):
     else:
         app.logger.exception('List of Ids expected')
         raise TypeError('List of Ids expected')
-        
+#legacy
+def extractHTMLMimeType(payload,stage):
+    
+    try:
+        countOfParts=len(payload['parts'])
+        msgSize =payload['body']['size']#do sth with msgsize Phase2
+    except Exception as e:
+        countOfParts=0
+        logger.exception('key error prolly')
 
-def extractCodedContentFromRawMessages(raw_messages_list:list,stage=2):
-    def extractHTMLMimeType(data):
-        try:
-            countOfParts=len(payload['parts'])
-            msgSize =payload['body']['size']#do sth with msgsize Phase2
-        except Exception as e:
-            countOfParts=0
-            logger.exception('key error prolly')
+    if stage==1:
 
-        if stage==1:
+        message_row = {"msgId":msg['id'],
+                        "threadId":msg['threadId'],
+                        "snippet":msg['snippet'],
+                        "mimeType":payload['mimeType'],
+                        "countOfParts":countOfParts,
+                        "msgSize":payload['body']['size'],
+                        "msgEpochTime":msg['internalDate'],
+                        "msgEncodedData":data,}
 
-            message_row = {"msgId":msg['id'],
-                            "threadId":msg['threadId'],
-                            "snippet":msg['snippet'],
-                            "mimeType":payload['mimeType'],
-                            "countOfParts":countOfParts,
-                            "msgSize":payload['body']['size'],
-                            "msgEpochTime":msg['internalDate'],
-                            "msgEncodedData":data,}
+        return message_row
 
-            return message_row
+    elif stage==2:
+        message_row = {"msgId":msg['id'],
+                        "threadId":msg['threadId'],
+                        "snippet":msg['snippet'],
+                        # "mimeType":payload['mimeType'],
+                        # "countOfParts":countOfParts,
+                        # "msgSize":payload['body']['size'],
+                        "msgEpochTime":msg['internalDate'],
+                        "msgEncodedData":data,}
 
-        elif stage==2:
-            message_row = {"msgId":msg['id'],
-                            "threadId":msg['threadId'],
-                            "snippet":msg['snippet'],
-                            # "mimeType":payload['mimeType'],
-                            # "countOfParts":countOfParts,
-                            # "msgSize":payload['body']['size'],
-                            "msgEpochTime":msg['internalDate'],
-                            "msgEncodedData":data,}
+        return message_row
+    
+    elif stage==3:
+        message_row = {"msgId":msg['id'],
+                        "threadId":msg['threadId'],
+                        "msgEpochTime":msg['internalDate'],
+                        "msgEncodedData":data,}
 
-            return message_row
-        
-        elif stage==3:
-            message_row = {"msgId":msg['id'],
-                            "msgEpochTime":msg['internalDate'],
-                            "msgEncodedData":data,}
+        return message_row
 
-            return message_row
+def payloadDataMapper(data):
+    try:
+        message_row = {"msgId":msg['id'],
+                "threadId":msg['threadId'],
+                "snippet":msg['snippet'],
+                # "mimeType":payload['mimeType'],
+                # "countOfParts":countOfParts,
+                # "msgSize":payload['body']['size'],
+                "msgEpochTime":msg['internalDate'],
+                "msgEncodedData":data,}
 
+        return message_row
+    except Exception as e:
+        current_app.logger.info("PayloadEMapperError")
+        pass
+
+def extractCodedContentFromRawMessages(raw_messages_list:list):
+    """Works like mapper for RAW MESSAGES
+    Args:
+        raw_messages_list (list): RAW returned by gmail service
+    """
+    
     app.logger.info('Input messages to process: %s',len(raw_messages_list))
-
     return_list = []
     for msg in raw_messages_list:
         app.logger.info('processing message: %s',msg['id'])
-        try:
-
+        try: #map and save
             payload = msg['payload']
-            
+
+            row = RawTransactions()
+            row.msgId=msg['id']
+            row.threadId=msg['threadId']
+            row.snippet=msg['snippet']
+            row.msgEpochTime=msg['internalDate']
+            row.msghistoryId=msg['historyId']
+   
             if payload['mimeType'] =='text/html':
                 app.logger.info('mimeType found text/html')
-                data = payload['body']['data']
-                messages_extracted_from_threads =extractHTMLMimeType(data)
-
-                return_list.append(messages_extracted_from_threads)
+                row.msgEncodedData = payload['body']['data']
+                # row = payloadDataMapper(payldata)
+                # messages_extracted_from_threads =extractHTMLMimeType(msg)
+                # row.save()
+                return_list.append(model_to_dict(row))
             else:
                 app.logger.info('mimeType found as other, looping again')
                 parts = payload['parts']
                 for payld in parts:
                     if payld['mimeType'] =='text/html':
                         app.logger.info('mimeType found as text/html')
-                        data = payld['body']['data']
-                        messages_extracted_from_threads =extractHTMLMimeType(data)
-                        return_list.append(messages_extracted_from_threads)
+                        row.msgEncodedData = payld['body']['data']
+                        # row.save()
+                        # messages_extracted_from_threads =extractHTMLMimeType(data)
+                        return_list.append(model_to_dict(row))
                     else:
                         app.logger.exception('No mime Type matched')   
         except Exception as e:
-            app.logger.exception('MimeType Did not match for the message id %s',msg['id'])
+            app.logger.exception('MappingError: for the message id %s',msg['id'])
             return e
+        
     app.logger.info('messages extracted %s \n messages given: %s',len(return_list),len(raw_messages_list))
-
     return return_list
+
+def getContentsFromBody(ebd):
+        amount_debtied = re.search(r'Rs.\d*', ebd)
+        to_vpa = re.search(r'VPA.+?on', ebd)
+        # date = re.search(r'\d{2}-\d{2}-\d{2}', ebd)
+        # date = re.search(r'(\d{2}-\d{2}-\d{2}).*?\.', ebd)
+        date = re.search(r'(\d{2}-\d{2}-\d{2}.*?)(?=\.)', ebd)
+
+        
+        if date:
+            date = date.group(1)
+        else: 
+            date = None
+        
+        if to_vpa:
+            to_vpa = to_vpa.group().strip('VPA  on')
+        else: 
+            to_vpa = None
+        if amount_debtied:
+            amount_debtied = amount_debtied.group().strip('Rs.')
+        else: 
+            amount_debtied = None
+        
+        return date,to_vpa,amount_debtied
+
+def getEmailBody(coded_body):
+    data = coded_body.replace("-","+").replace("_","/")
+    decoded_data = base64.b64decode(data)
+    soup = BeautifulSoup(decoded_data , "html.parser")
+    # current_app.logger.info(soup)
+    email_body = soup.find_all('td',{"class": "td"})[0].text
+    if len(email_body) <20: #was taking an empty td as 0th element of list
+        email_body = soup.find_all('td',{"class": "td"})[1].text
+   
+    return email_body
+    # date,to_vpa,amount_debtied = getContentsFromBody(email_body)
+    # return date,to_vpa,amount_debtied
 
 
 def extractBodyFromEncodedData(coded_relevant_json):
-    def getContentsFromBody(ebd):
-            amount_debtied = re.search(r'Rs.\d*', ebd)
-            to_vpa = re.search(r'VPA.+?on', ebd)
-            date = re.search(r'\d{2}-\d{2}-\d{2}', ebd)
-            if date:
-                date = date.group()
-            else: 
-                date = None
-            
-            if to_vpa:
-                to_vpa = to_vpa.group().strip('VPA  on')
-            else: 
-                to_vpa = None
-            if amount_debtied:
-                amount_debtied = amount_debtied.group().strip('Rs.')
-            else: 
-                amount_debtied = None
-            
-            return date,to_vpa,amount_debtied
-
-    def getEmailBody(coded_body):
-        data = coded_body.replace("-","+").replace("_","/")
-        decoded_data = base64.b64decode(data)
-        soup = BeautifulSoup(decoded_data , "html.parser")
-        email_body = soup.find_all('td',{"class": "td"})[0].text
-        date,to_vpa,amount_debtied = getContentsFromBody(email_body)
-        return date,to_vpa,amount_debtied
+    if not isinstance(coded_relevant_json,list):
+        x=[]
+        x.append(coded_relevant_json)
+        coded_relevant_json=x
+    else:
+        pass
    
     try:
         current_app.logger.info('type of input %s',type(coded_relevant_json))
         count = len(coded_relevant_json)
         current_app.logger.info('size of input messages %s',count)
         decoded_extracted_info = []
+        failed_first_box = []
         # coded_relevant_json=list(coded_relevant_json)
         for message in coded_relevant_json:
             # logger.info('message %s',message)
@@ -321,19 +372,26 @@ def extractBodyFromEncodedData(coded_relevant_json):
 
                 data = message['msgEncodedData']
                 # app.logger.info('processing json ')
-                date,to_vpa,amount_debtied = getEmailBody(data)
+                # date,to_vpa,amount_debtied = getEmailBody(data)
+                email_body = getEmailBody(data)
+                date,to_vpa,amount_debtied = getContentsFromBody(email_body)
+
                 message['date']= date
                 message['to_vpa']= to_vpa
                 message['amount_debited']= amount_debtied
                 del message['msgEncodedData']
+                # if amount_debtied ==None or date==None or to_vpa==None:
+                #     pass
+                # else:
                 decoded_extracted_info.append(message)
             except Exception as e:
                 current_app.logger.exception('error extracting message id %s,',e)
                 return ("ExtractionError:",e)
 
-            
         app.logger.info('size of output messages %s',len(decoded_extracted_info))
+
         return decoded_extracted_info
+            
     except Exception as e:
         # decoded_extracted_info
         logger.exception('error in extracting transaction info')
@@ -389,27 +447,41 @@ def getQueryForLastDay():
     return query
 
 
-def fetchRawMessagesForQuery(query,token):
+
+def fetchRawMessagesForQuery(query):
     try:
 
         srvc = buildGmailService() #token
-        app.logger.info('service built')
+        current_app.logger.info('service built')
     except Exception as e:
+        current_app.logger.exception('service not built')
         return e
     # app.logger.info('service %s  %s ',type(srvc),srvc)
     try:
         ids = getMatchedThreadIdsForQuery(srvc,query)
-        app.logger.info('ids to process: %s ',ids)
+        current_app.logger.info('ids to process: %s ',ids)
         #independent of query after this point-
         messages = get_messages_data_from_threads(srvc,ids)
+        current_app.logger.info('processed all messages: %s \n type : %s',len(messages),type(messages))
+        ###DUMP TO S3
+        return messages
+
     except Exception as e:
         return e
-    logger.info('processed all messages: %s \n type : %s',len(messages),type(messages))
-    return messages
 
 
 
 def processRawMessagesWithStages(raw_messages,stage):
+    """_summary_
+
+    Args:
+        raw_messages (list): list of messages returned by fetchRawMessages
+        stage (int): stage could be 0: raw messages as received 1: coded extracted from json >2: decoded format
+
+    Returns:
+        _type_: _description_
+    """
+    
     valid_stages = [0,1,2,3]
     if stage==0:
         logger.info('RAW stage requested..returning same as response')
@@ -418,12 +490,14 @@ def processRawMessagesWithStages(raw_messages,stage):
         try:
             app.logger.info('%s stage requested. Processing...',stage)
             coded_content_json = extractCodedContentFromRawMessages(raw_messages,stage)
+
+            coded_content_json = model_to_dict(coded_content_json)
             app.logger.info('coded body extracted')
             if stage==1:
                 return coded_content_json
             else:
 
-                app.logger.info('decoding the coded body & extracting Transaction info')
+                current_app.logger.info('decoding the coded body & extracting Transaction info')
                 decoded_transaction_info = extractBodyFromEncodedData(coded_content_json) #big processing unit, split into chunks or make smaller
                 app.logger.info('coded body extracted')
                 if stage>=2:
@@ -499,7 +573,7 @@ def commitToDb(data):
 
     try:
         clean_messages = cleanTransactionMessages(processed_messags=data)
-
+        current_app.logger.info("Messages Cleaned")
     except Exception as e:
         return ("CleaningError: %s ",e)
 
@@ -510,7 +584,7 @@ def commitToDb(data):
         print(type(res))
         return res
     else:
-        return "False"
+        return "CommitError: Messages not clean"
 
 
 ##WORKFLOW #3
