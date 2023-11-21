@@ -316,9 +316,13 @@ def extractCodedContentFromRawMessages(raw_messages_list:list):
 def getContentsFromBody(ebd):
         amount_debtied = re.search(r'Rs.\d*', ebd)
         to_vpa = re.search(r'VPA.+?on', ebd)
-        date = re.search(r'\d{2}-\d{2}-\d{2}', ebd)
+        # date = re.search(r'\d{2}-\d{2}-\d{2}', ebd)
+        # date = re.search(r'(\d{2}-\d{2}-\d{2}).*?\.', ebd)
+        date = re.search(r'(\d{2}-\d{2}-\d{2}.*?)(?=\.)', ebd)
+
+        
         if date:
-            date = date.group()
+            date = date.group(1)
         else: 
             date = None
         

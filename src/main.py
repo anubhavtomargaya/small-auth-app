@@ -90,7 +90,7 @@ def fetch():
         et = request.args.get('end_')
         current_app.logger.info("st et %s %s ",st,et)
         if not st or not et:
-            st = '2023-11-06'
+            st = '2023-11-01'
             et = '2023-11-10'
         creds = google_auth.build_credentials()
         current_app.logger.info("creds",creds)
@@ -108,8 +108,8 @@ def fetch():
         current_app.logger.info('msgs %s',len(messages))
         list_of_dicts = [{attr: getattr(obj, attr) for attr in vars(obj)} for obj in messages]
         list_of_smaller_dicts = extractCodedContentFromRawMessages(list_of_dicts)
-
-        return '<div>your creds <div><pre> ' + json.dumps(list_of_smaller_dicts, indent=4) + "</pre>"
+        list_of_content_dicts = extractBodyFromEncodedData(list_of_smaller_dicts)
+        return '<div>your creds <div><pre> ' + json.dumps(list_of_content_dicts, indent=4) + "</pre>"
         # return '<div>You are currently logged in as ' + user_info['given_name'] + '<div><pre>' + json.dumps(user_info, indent=4) + "</pre>"
     else:
         return render_template("index.html")
