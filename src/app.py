@@ -1,13 +1,19 @@
 from flask import Flask
 from flask_cors import CORS,cross_origin
 import logging
+from logger import fh
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-fh = logging.FileHandler('test.log')
-fh.setLevel(logging.INFO)
-# logger.addHandler(fh)
+logging.basicConfig(level=logging.INFO)  
 
-app = Flask(__name__)
-CORS(app)
 
+
+def create_app():
+    app = Flask(__name__)
+    # app.logger.addHandler(file_handler)
+    app.logger.addHandler(fh)
+    app.logger.info('Flask app started')
+    CORS(app)
+    app.logger.info('Flask app CORSed')
+    return app 
+
+app = create_app()
