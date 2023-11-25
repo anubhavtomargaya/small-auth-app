@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #6a11cb 0%, #2575fc 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 300px;
+        }
+
+        .card h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .auth-buttons a {
+            text-decoration: none;
+            color: white;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .auth-buttons img {
+            height: 40px;
+            width: auto;
+        }
+
+        .google-icon {
+            fill: red;
+            height: 40px;
+            width: 40px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Sign in to Continue</h1>
+        <div class="auth-buttons">
+            <a href="google/login">
+                <svg class="google-icon" viewBox="0 0 24 24">
+                    <path d="M12 2.3c2.8 0 5.3 1 7.3 2.7l-3 3c-1-.6-2.2-.9-4.3-.9-3.3 0-6.1 2.2-7.1 5.2H1.7V8.6C4 5.1 7.7 2.3 12 2.3zm0 19.4c3.3 0 6-1.1 8-3l3.4 3.4c-2.4 2.3-5.5 3.7-9.4 3.7-5.6 0-10.4-3.8-12-9H4.9c1.1 3 4 5.3 7.1 5.3z"/>
+                </svg>
+                Sign in with Google
+            </a>
+            <!-- Other auth buttons if needed -->
+        </div>
+    </div>
+</body>
+</html>
