@@ -1,13 +1,12 @@
 
-import functools
-# import json
-# import os
-import flask 
-from flask import current_app, url_for, redirect
-from ...constants import *
-from .auth import get_user_info
 
 from authlib.client import OAuth2Session
+from flask import current_app, url_for, redirect
+import flask 
+import functools
+
+from ...constants import *
+from .auth import get_user_info
 from ...common.session_manager import set_auth_state,set_auth_token,  get_auth_state, set_next_url, get_next_url,is_logged_in
 # from requests_oauthlib import OAuth2Session
 

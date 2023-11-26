@@ -10,7 +10,8 @@ def build_credentials():
 
     oauth2_tokens = get_auth_token()
     if not oauth2_tokens:
-        raise RuntimeError("Cant get auth tokens") 
+        raise Exception("Cant get auth tokens") 
+    
     return google.oauth2.credentials.Credentials(
                 oauth2_tokens['access_token'],
                 # refresh_token=oauth2_tokens['refresh_token'],

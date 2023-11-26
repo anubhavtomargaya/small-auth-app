@@ -1,3 +1,3 @@
-from flask import session, current_app
+from flask import current_app
 
 
