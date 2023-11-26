@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance to serve my Flask app
+After=network.target
+
+[Service]
+User=root 
+Group=root 
+WorkingDirectory=/home/anubhavsinghtomar/Anubhav/my-projects/small-auth-app
+Environment="PATH=/home/anubhavsinghtomar/Anubhav/my-projects/small-auth-app/.venv/bin"
+ExecStart=/home/anubhavsinghtomar/Anubhav/my-projects/small-auth-app/.venv/bin/gunicorn  -w 4 -b 0.0.0.0:5000 "src:create_app()" 
+
+[Install]
+WantedBy=multi-user.target
