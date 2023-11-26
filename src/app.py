@@ -27,21 +27,7 @@ def create_app():
 
 app = create_app()
 
-
-@app.route('/login',methods=['GET'])
-def login():
-    if is_logged_in():
-
-        current_app.logger.info('logged in , %s',get_next_url())
-        return redirect(url_for('home'))
-    else:
-        current_app.logger.info('not logged in , %s',get_next_url())
-        set_next_url(url_for('home'))
-        current_app.logger.info('next url set, %s',url_for('home'))
-        current_app.logger.info('next url get, %s',get_next_url())
-        
-        return redirect(url_for('google_auth.login'))
-
+#home is always rendering a template
 @app.route('/',methods=['GET'])
 def home():
     if not is_logged_in():
@@ -50,18 +36,21 @@ def home():
         current_app.logger.info('next url get, %s',get_next_url())
         
         return render_template('login.html')
-        # return redirect(url_for('login'))
-    
-    # Render the home page with a table or dashboard
-    return render_template('home.html')
+    else:
+        return render_template('home.html')
 
-@app.route('/test',methods=['GET'])
-def test():
-    # if not is_logged_in():
-    return render_template('index.html')
-        # return redirect(url_for('login'))
-    # Render the home page with a table or dashboard
-    # return render_template('home.html')
+#login & logout routes only redirect
+@app.route('/login',methods=['GET'])
+def login():
+    if is_logged_in():
+
+        current_app.logger.info('logged in ,next url %s',get_next_url())
+        return redirect(url_for('home'))
+    else:
+        current_app.logger.info('not logged in , %s',get_next_url())
+        current_app.logger.info('next url get, %s',get_next_url())
+        
+        return redirect(url_for('google_auth.login'))
 
 @app.route('/logout',methods=['GET'])
 def logout():
@@ -69,8 +58,18 @@ def logout():
         return redirect(url_for('login'))
     # Render the home page with a table or dashboard
     clear_auth_session()  # Clear session data
-    return render_template('login.html')
+    return redirect(url_for('home'))
 
+#test a route to debug beside home
+@app.route('/test',methods=['GET'])
+def test():
+    # if not is_logged_in():
+    return render_template('index_copy.html')
+        # return redirect(url_for('login'))
+    # Render the home page with a table or dashboard
+    # return render_template('home.html')
+
+    
 @app.route('/session',methods=['GET'])
 def debug():
     # if not is_logged_in():pass

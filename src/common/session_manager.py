@@ -4,6 +4,7 @@ FLAST_NEXT_URL_KEY = 'next_url'
 AUTH_TOKEN_KEY = 'auth_token'
 AUTH_STATE_KEY = 'oauth_state'
 
+
 def set_auth_token(token):
     session[AUTH_TOKEN_KEY] = token
 

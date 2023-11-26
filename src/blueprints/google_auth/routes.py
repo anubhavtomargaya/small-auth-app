@@ -5,11 +5,10 @@ import functools
 import flask 
 from flask import current_app, url_for, redirect
 from ...constants import *
-from .utils import is_logged_in,build_credentials
 from .auth import get_user_info
 
 from authlib.client import OAuth2Session
-from ...common.session_manager import set_auth_state, clear_auth_session, get_auth_state, set_next_url, get_next_url, clear_next_url
+from ...common.session_manager import set_auth_state,set_auth_token,  get_auth_state, set_next_url, get_next_url,is_logged_in
 # from requests_oauthlib import OAuth2Session
 
 from . import google_auth
@@ -32,17 +31,16 @@ def login():
 
         
     if is_logged_in():
-
         return redirect(url_for('home'))
     current_app.logger.info("RUNNING LOGIN")
     current_app.logger.info('building session')
     session = OAuth2Session(CLIENT_ID, CLIENT_SECRET,
                             scope=AUTHORIZATION_SCOPE,
                             redirect_uri=
-                            url_for('google_auth.google_auth_redirect',
+                                    url_for('google_auth.google_auth_redirect',
                                     _external=True)) #no need to use 
-                                                     #AUTH_REDIRECT_URI
- 
+                                                        #AUTH_REDIRECT_URI
+
     uri, state = session.authorization_url(AUTHORIZATION_URL)
     current_app.logger.info("state %s",state )
     current_app.logger.info("uri %s",uri)
@@ -65,7 +63,7 @@ def google_auth_redirect():
                                 scope=AUTHORIZATION_SCOPE,
                                 state=req_state,
                                 redirect_uri=
-                                url_for('google_auth.google_auth_redirect',
+                                        url_for('google_auth.google_auth_redirect',
                                         _external=True))
     except Exception as e:
         return flask.jsonify(e)
@@ -75,8 +73,8 @@ def google_auth_redirect():
                         ACCESS_TOKEN_URI,            
                         authorization_response=flask.request.url)
 
-    
-    set_auth_tokens(oauth2_tokens)
+    current_app.logger.info('oath tokens!! : %s',oauth2_tokens)
+    set_auth_token(oauth2_tokens)
     default_login_url = url_for('google_auth.etc',data=oauth2_tokens)
 
     next_url = get_next_url()
@@ -88,9 +86,7 @@ def google_auth_redirect():
         return flask.redirect(next_url, code=307)
     else: 
         return flask.redirect(default_login_url, code=307)
-def set_auth_tokens(oauth2_tokens):
-    current_app.logger.info('oath tokens!! : %s',type(oauth2_tokens))
-    flask.session[AUTH_TOKEN_KEY] = oauth2_tokens
+    
 
 @google_auth.route('/logout')
 @no_cache
