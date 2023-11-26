@@ -1,6 +1,6 @@
 from flask import session
+
 FLAST_NEXT_URL_KEY = 'next_url' 
-# session.permanent=True
 AUTH_TOKEN_KEY = 'auth_token'
 AUTH_STATE_KEY = 'oauth_state'
 
