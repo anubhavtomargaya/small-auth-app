@@ -1,11 +1,22 @@
 from . import gmail_app
 import requests,json,datetime
-from flask import current_app,jsonify,request
-from ...common.session_manager import is_logged_in
+from flask import current_app,jsonify,request, url_for, redirect,render_template
+from ...common.session_manager import is_logged_in,set_next_url
 from ..google_auth.auth import get_user_info
 from .utils import get_matched_threads
 from .workflow import getQueryForDateRange,processRawMessagesWithStages,getQueryForLastDay,fetchRawMessagesForQuery
 from .gmail_fetcher import GmailFetcher
+
+
+
+@gmail_app.route('/fetch/',methods=['GET','POST'])
+def home():
+    if not is_logged_in():
+        set_next_url(url_for('gmail.home'))
+        return redirect(url_for('google_auth.login'))
+    else:
+        render_template(url_for('home.html'))
+
 
 @gmail_app.route('/fetch/',methods=['GET','POST'])
 def fetchTransactionEmailsFromGmail():

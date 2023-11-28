@@ -5,9 +5,10 @@
 }
 
 body {
-    background: linear-gradient(270deg, #1a1a1a, #333, #1a1a1a, #555);
-    background-size: 400% 400%;
-    animation: gradientBackground 15s ease infinite;
+    background: radial-gradient(circle,  #1a1a1a, #333);
+    /* linear-gradient(270deg, #1a1a1a, #333, #1a1a1a, #555); */
+    background-size: 200% 400%;
+    animation: radialPulse 4s infinite alternate;
     color: red;
     font-family: Arial, sans-serif;
     
@@ -31,15 +32,15 @@ body {
 }
 
 @keyframes radialPulse {
-    0% { background-size: 100% 100%; }
-    100% { background-size: 200% 200%; }
+    0% { background-size: 400% 400%; }
+    100% { background-size: 400% 400%; }
 }
 .extra-details {
     width: 100%;
-    text-align: center;
+    /* text-align: center; */
     padding: 20px;
     background: radial-gradient(circle, rgba(255,255,255,0.1), rgba(0,0,0,0.5));
-    animation: radialPulse 10s infinite alternate;
+    animation: radialPulse 10s ease alternate;
 }
 
 #googleSignIn, #exploreButton {
@@ -53,18 +54,21 @@ body {
 #exploreButton:hover {
     animation: hoverAnimation 0.5s forwards;
 }
+#googleSignIn:hover {
+    animation: hoverAnimation 0.5s forwards;
+}
 
 @keyframes hoverAnimation {
     0% { transform: scale(1); }
-    100% { transform: scale(1.1); }
+    100% { transform: scale(1.2); }
 }
 
-#foregroundGraphic {
+/* #foregroundGraphic {
     height: 100px;
     width: 100px;
     margin: 20px auto;
 
-}
+} */
 
 
 .features {
@@ -73,15 +77,20 @@ body {
     /* gap: 2rem; */
     width: 100%;
     justify-content: stretch;
+    margin-top: 2rem;
+    background: radial-gradient(circle, rgba(255,255,255,0.1), rgba(0,0,0,0.5));
+    animation: radialPulse 10s infinite infinite;
 }
 
 .feature-card {
     flex: 0 auto;
-    width: 300px; /* Width of each card */
+    /* width: 300px; Width of each card */
     height: 200px;
-    background-color: #333; /* Monochromatic theme */
+    /* background-color: #333; Monochromatic theme */
     padding: 10px;
-    margin-bottom: 2rem;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 16pt;
+    overflow-wrap: break-word;
     /* border: 2px solid #555; Style as needed */
 }
 

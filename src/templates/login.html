@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Game Lobby Page</title>
+    <title>Lobby Page</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
 
@@ -9,22 +9,26 @@
 <body>
     <div class="container">
         <div class="brand-statement">
-            <p>Your Brand Statement here</p>
-        </div>
-        <div class="features">
-            <div class="feature-card">Feature 1 Details</div>
-            <div class="feature-card">Feature 2 Details</div>
-            <div class="feature-card">Feature 3 Details</div>
+            <p>Enter a brand statement here that is short and looks good</p>
+            <p>Pull all your fin data in one place</p>
+            <p>And use it to do amazing things.</p>
+           
         </div>
         <div class="extra-details">
-            <svg id="foregroundGraphic" viewBox="0 0 100 100">
-                <!-- SVG content goes here -->
-            </svg>
-            <p>Extra details and action items here.</p>
+            <!-- <svg id="foregroundGraphic" viewBox="0 0 100 100">
+             
+            </svg> -->
+            <p>  Like planning your nutrition or saving for a vacation </p>
             <!-- <a href="{{ url_for('login') }}" class="btn-logout">Logout</a> -->
-            <a href="{{ url_for('google_auth.login') }}"><button id="googleSignIn" >Login with Google</button></a>
+            <a href="{{ url_for('gmail.login') }}"><button id="googleSignIn" >Get data from Gmail</button></a>
             <button id="exploreButton">Explore</button>
         </div>
+        <div class="features">
+            <div class="feature-card">Use the transaction emails in mailbox to and built insights </div>
+            <div class="feature-card">Allocate budgets and identify patterns, i.e. habits </div>
+            <div class="feature-card">Fully secure and private, use your own google drive to store any data to export</div>
+        </div>
+        
         
     </div>
     <script src="{{ url_for('static', filename='/script.js') }}"></script>
