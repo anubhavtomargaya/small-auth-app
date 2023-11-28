@@ -1,5 +1,5 @@
 from flask import current_app as app, jsonify
-from ...common.utils import build_credentials
+from ...common.google_utils import build_credentials
 from googleapiclient.discovery import build
 
 def get_matched_threads(query,
