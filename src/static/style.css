@@ -1,0 +1,88 @@
+@keyframes gradientBackground {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+body {
+    background: linear-gradient(270deg, #1a1a1a, #333, #1a1a1a, #555);
+    background-size: 400% 400%;
+    animation: gradientBackground 15s ease infinite;
+    color: red;
+    font-family: Arial, sans-serif;
+    
+    line-height: 1.2;
+    /* padding: 20px; */
+    /* text-align: center; */
+    /* overflow-wrap: break-word; */
+}
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.brand-statement {
+    font-size: 8vw; /* Adjust as needed */
+    font-weight: bold;
+    
+
+}
+
+@keyframes radialPulse {
+    0% { background-size: 100% 100%; }
+    100% { background-size: 200% 200%; }
+}
+.extra-details {
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1), rgba(0,0,0,0.5));
+    animation: radialPulse 10s infinite alternate;
+}
+
+#googleSignIn, #exploreButton {
+    padding: 10px 20px;
+    margin: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#exploreButton:hover {
+    animation: hoverAnimation 0.5s forwards;
+}
+
+@keyframes hoverAnimation {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+}
+
+#foregroundGraphic {
+    height: 100px;
+    width: 100px;
+    margin: 20px auto;
+
+}
+
+
+.features {
+    display: flex;
+    overflow-x: auto; /* Horizontal scroll */
+    /* gap: 2rem; */
+    width: 100%;
+    justify-content: stretch;
+}
+
+.feature-card {
+    flex: 0 auto;
+    width: 300px; /* Width of each card */
+    height: 200px;
+    background-color: #333; /* Monochromatic theme */
+    padding: 10px;
+    margin-bottom: 2rem;
+    /* border: 2px solid #555; Style as needed */
+}
+
+/* Add more styling as per your need */
