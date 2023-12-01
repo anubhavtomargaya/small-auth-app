@@ -46,7 +46,8 @@ def create_app():
             
             return render_template('login.html')
         else:
-            return render_template('home.html')
+            return render_template('login.html')
+            # return render_template('home.html')
 
     #login & logout routes only redirect
     @app.route('/login',methods=['GET'])

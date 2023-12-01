@@ -9,17 +9,46 @@ from .gmail_fetcher import GmailFetcher
 
 
 
-@gmail_app.route('/fetch/',methods=['GET','POST'])
-def home():
+@gmail_app.route('/',methods=['GET','POST'])
+def index():
     if not is_logged_in():
-        set_next_url(url_for('gmail.home'))
+        set_next_url(url_for('gmail_app.index'))
+        current_app.logger.debug("not logged int")
         return redirect(url_for('google_auth.login'))
     else:
-        render_template(url_for('home.html'))
+        current_app.logger.debug("logged int")
+        return render_template('home.html') ##gmail_app > index.html
+
+## get gmail emails and put in cache / db 
+## works in stages 
+# 1. GmailMessages 2. BS64Content 3. Transaction 
+# 4. txn_extra_dimensions
+#defaults.py
+FM_EMAIL = 'alerts@hdfcbank.net'
+RANGE_STR = 'lastDay'
+
+class FetchRequest:
+    def __init__(self,
+                 start_date:str,
+                 end_date:str,
+                 range:str=RANGE_STR,
+                 stage:int=2,
+                 from_email:str=FM_EMAIL,
+                 history_id:int=None,
+                 session_token:object=None) -> None:
+        
+        self.range_str = range 
+        self.stage = stage 
+        self.st = start_date
+        self.et = end_date
+        self.from_email = from_email
+        self.history_id=history_id
+        self.session_token = session_token
 
 
-@gmail_app.route('/fetch/',methods=['GET','POST'])
+@gmail_app.route('/fetch/',methods=['GET','POST']) 
 def fetchTransactionEmailsFromGmail():
+    params = ['range_str','stage']
     start_time = datetime.datetime.utcnow()
     mthd = request.method 
     args = request.args
@@ -38,63 +67,63 @@ def fetchTransactionEmailsFromGmail():
     if mthd == 'GET':
         current_app.logger.info('args: %s',args)
         ###read arguements
-        if args.get('range_str'):
-            query_range_str = args.get('range_str') #1
-        else:
-            if is_logged_in():
-                lastDayQuery = getQueryForLastDay()
-                st='2023-09-01'
-                et='2023-09-10'
-                rangeQuery = getQueryForDateRange(st,et)
-                threads = get_matched_threads(rangeQuery)
+        if is_logged_in():
+            if args.get('range_str'):
+                query_range_str = args.get('range_str') #1
+            else:
+                    lastDayQuery = getQueryForLastDay()
+                    st='2023-11-01'
+                    et='2023-12-01'
+                    rangeQuery = getQueryForDateRange(st,et)
+                    threads = get_matched_threads(rangeQuery)
                 # current_app.logger.info(d)
                 
-                return  jsonify(json.dumps(threads) )
+                    return  jsonify(json.dumps(threads) )
+
+            # return jsonify("MissingArgument: Arguements 'range' missing")
+
+            if args.get('stage'):
+                response_checkpoint_level = int(args.get('stage')) #2
+                current_app.logger.info('setting response stage from stage argument as %s',response_checkpoint_level)
             else:
-                return jsonify("LOGIN REQUIRED")
+                response_checkpoint_level=0
+                current_app.logger.info('setting response stage as 0, i.e: RAW')
+            
+            ###fetch messages for range param from gmail & return based on requested stage
+            if query_range_str=='lastDay':
+                try:
+                    lastDayQuery = getQueryForLastDay()
+                    current_app.logger.info('query: %s',lastDayQuery)
+                    messages = fetchRawMessagesForQuery(lastDayQuery) 
+                    current_app.logger.info('msgs: %s',type(messages))
+                    if messages:
+                        pass
+                    else:
+                        return jsonify("FetchingError ")
 
-            return jsonify("MissingArgument: Arguements 'range' missing")
+                except Exception as e:
+                    logger.exception('WorkflowError: %s',e)
+                    return jsonify("FetchingError %s",e)
 
-        if args.get('stage'):
-            response_checkpoint_level = int(args.get('stage')) #2
-            current_app.logger.info('setting response stage from stage argument as %s',response_checkpoint_level)
-        else:
-            response_checkpoint_level=0
-            current_app.logger.info('setting response stage as 0, i.e: RAW')
-        
-        ###fetch messages for range param from gmail & return based on requested stage
-        if query_range_str=='lastday':
-            try:
-                lastDayQuery = getQueryForLastDay()
-                current_app.logger.info('query: %s',lastDayQuery)
-                messages = fetchRawMessagesForQuery(lastDayQuery) 
-                current_app.logger.info('msgs: %s',type(messages))
-                if messages:
-                    pass
+                if response_checkpoint_level==0:
+                    return jsonify(messages)
                 else:
-                    return jsonify("FetchingError ")
+                    pass  #to next try/catch
+                
+                ##process messages received as RAW
+                try:
+                    current_app.logger.info('processing response for the stage %s',response_checkpoint_level)
+                    processed_messages = processRawMessagesWithStages(messages,stage=response_checkpoint_level)  #give the stage argument to process up to the level
+                    return jsonify(processed_messages)
 
-            except Exception as e:
-                logger.exception('WorkflowError: %s',e)
-                return jsonify("FetchingError %s",e)
+                except Exception as e:
+                    return jsonify("ProcessingError: %s",e)
 
-            if response_checkpoint_level==0:
-                return jsonify(messages)
+                
             else:
-                pass  #to next try/catch
-            
-            ##process messages received as RAW
-            try:
-                current_app.logger.info('processing response for the stage %s',response_checkpoint_level)
-                processed_messages = processRawMessagesWithStages(messages,stage=response_checkpoint_level)  #give the stage argument to process up to the level
-                return jsonify(processed_messages)
-
-            except Exception as e:
-                return jsonify("ProcessingError: %s",e)
-
-            
+                return jsonify("InputError: Unexpected Arguements")
         else:
-            return jsonify("InputError: Unexpected Arguements")
+            return jsonify("LOGIN REQUIRED")
 
 
     elif mthd == 'POST':
