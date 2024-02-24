@@ -213,17 +213,31 @@ def extractCodedContentFromRawMessages(raw_messages_list:list,stage=2):
             countOfParts=0
             logger.exception('key error prolly')
 
-        if stage==1 or stage==2:
+        if stage==1:
+
             message_row = {"msgId":msg['id'],
                             "threadId":msg['threadId'],
                             "snippet":msg['snippet'],
                             "mimeType":payload['mimeType'],
                             "countOfParts":countOfParts,
+                            "msgSize":payload['body']['size'],
+                            "msgEpochTime":msg['internalDate'],
+                            "msgEncodedData":data,}
+
+            return message_row
+
+        elif stage==2:
+            message_row = {"msgId":msg['id'],
+                            "threadId":msg['threadId'],
+                            "snippet":msg['snippet'],
+                            # "mimeType":payload['mimeType'],
+                            # "countOfParts":countOfParts,
                             # "msgSize":payload['body']['size'],
                             "msgEpochTime":msg['internalDate'],
                             "msgEncodedData":data,}
 
             return message_row
+        
         elif stage==3:
             message_row = {"msgId":msg['id'],
                             "msgEpochTime":msg['internalDate'],
