@@ -1,8 +1,9 @@
+from peewee import *
 
 from peewee import *
 import logging
-from workflow import getEmailBody
-from config import username,password,database_name,endpoint
+
+from src.config import username,password,database_name,endpoint
 
 # db= MySQLDatabase(database_name,username ,password,endpoint)
 # db = SqliteDatabase(':memory:')
@@ -11,9 +12,3 @@ from config import username,password,database_name,endpoint
 
 # print(db.get_tables())
 
-from workflow import GmailConnector,buildGmailService
-
-# gm = GmailConnector()
-# gm.buildService()
-sr = buildGmailService()
-print(sr)
