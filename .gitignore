@@ -134,4 +134,8 @@ RAW - 2023-05-06 21:35:48.423862_.json
 =======
 src/main.py
 test_gmail_auth.py
+<<<<<<< HEAD
 >>>>>>> 0bdad21 (adde google auth)
+=======
+token.pickle
+>>>>>>> 0d88f34 (old changes)

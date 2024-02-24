@@ -71,7 +71,6 @@ def fetchTransactionEmailsFromGmail():
     args = request.args
     # if (content_type == 'application/json'):
     # data = request.data
-    data = request.get_json()
     
     # else:
         # return "TypeError: Content-Type not supported!"
@@ -84,6 +83,7 @@ def fetchTransactionEmailsFromGmail():
         if args.get('range'):
             query_range_str = args.get('range') #1
         else:
+    
             return jsonify("MissingArgument: Arguements 'range' missing")
 
         if args.get('stage'):
@@ -125,6 +125,7 @@ def fetchTransactionEmailsFromGmail():
     elif mthd == 'POST':
         try: 
             content_type = request.headers.get('Content-Type')
+            data = request.get_json()
             rng = data['range']
             response_checkpoint_level=data['stage']
             st,et=rng[0],rng[1]
