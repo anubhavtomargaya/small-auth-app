@@ -44,8 +44,7 @@ class QueryGenerator:
         self.end_time = None
         self.qry = None
 
-    def get_by_email(self,email,st,et):pass
-
+   
     
     def get_last_n_days_mails_by_label(self,days,label='hdfc'):
         if label=='hdfc':
@@ -437,14 +436,22 @@ def getQueryForDateRange(st,end):
     query= qg.get_mails_by_date_range(st,end)
     logger.info('query generated.')
     return query
+from .time_utils import get_timerange
+def get_query_for_email(email='alerts@hdfcbank.net',):
+        
+        before,after = get_timerange()
+        x = f"from:{email} after:{after} before:{before}"
+        print(x,"qrt")
+        return x
 
-
+    
 
 ##WORKFLOW #1
 def getQueryForLastDay():
     qg = QueryGenerator()
     query= qg.get_last_n_days_mails_by_label(days=1)
     logger.info('query generated.')
+    print(query,"query")
     return query
 
 

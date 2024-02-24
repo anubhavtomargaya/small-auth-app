@@ -3,8 +3,8 @@ import requests,json,datetime
 from flask import current_app,jsonify,request, url_for, redirect,render_template
 from ...common.session_manager import is_logged_in,set_next_url
 from ..google_auth.auth import get_user_info
-from .utils import get_matched_threads
-from .workflow import getQueryForDateRange,processRawMessagesWithStages,getQueryForLastDay,fetchRawMessagesForQuery
+from .utils import get_matched_threads, get_messages_data_from_threads
+from .workflow import get_query_for_email, getQueryForDateRange,processRawMessagesWithStages,getQueryForLastDay,fetchRawMessagesForQuery
 from .gmail_fetcher import GmailFetcher
 
 
@@ -72,21 +72,27 @@ def fetchTransactionEmailsFromGmail():
                 query_range_str = args.get('range_str') #1
             else:
                     lastDayQuery = getQueryForLastDay()
-                    st='2023-11-01'
-                    et='2023-12-01'
-                    rangeQuery = getQueryForDateRange(st,et)
+                    st='2024-02-21'
+                    et='2024-02-26'
+                    rangeQuery = get_query_for_email()
                     threads = get_matched_threads(rangeQuery)
                 # current_app.logger.info(d)
-                
-                    return  jsonify(json.dumps(threads) )
+                    print("returning")
+                    msgs = get_messages_data_from_threads(threads)
+                    print(threads)
+                    #put this into db, along w count
+
+                    return  jsonify(json.dumps(msgs) )
 
             # return jsonify("MissingArgument: Arguements 'range' missing")
 
+            print("res",response_checkpoint_level)
             if args.get('stage'):
                 response_checkpoint_level = int(args.get('stage')) #2
                 current_app.logger.info('setting response stage from stage argument as %s',response_checkpoint_level)
             else:
                 response_checkpoint_level=0
+                print("res",response_checkpoint_level)
                 current_app.logger.info('setting response stage as 0, i.e: RAW')
             
             ###fetch messages for range param from gmail & return based on requested stage
