@@ -1,9 +1,11 @@
+from src.blueprints.gmail.process_encoded import extractBodyFromEncodedData
+from src.blueprints.gmail.process_raw import extractCodedContentFromRawMessages, parse_gmail_message
 from . import gmail_app
 import requests,json,datetime
 from flask import current_app,jsonify,request, url_for, redirect,render_template
 from ...common.session_manager import is_logged_in,set_next_url
 from ..google_auth.auth import get_user_info
-from .utils import get_matched_threads, get_messages_data_from_threads
+from .utils import get_matched_threads, get_messages_by_thread_ids, get_messages_data_from_threads
 from .workflow import get_query_for_email, getQueryForDateRange,processRawMessagesWithStages,getQueryForLastDay,fetchRawMessagesForQuery
 from .gmail_fetcher import GmailFetcher
 
@@ -73,16 +75,19 @@ def fetchTransactionEmailsFromGmail():
             else:
                     lastDayQuery = getQueryForLastDay()
                     st='2024-02-21'
-                    et='2024-02-26'
-                    rangeQuery = get_query_for_email()
+                    et='2024-02-28'
+                    rangeQuery = get_query_for_email(start=st,end=et)
                     threads = get_matched_threads(rangeQuery)
                 # current_app.logger.info(d)
                     print("returning")
                     msgs = get_messages_data_from_threads(threads)
                     print(threads)
+                    # coded_msgs = [parse_gmail_message(msg) for msg in msgs]
+                    coded_msgs = extractCodedContentFromRawMessages(msgs)
                     #put this into db, along w count
+                    transactions_ = extractBodyFromEncodedData(coded_msgs)
 
-                    return  jsonify(json.dumps(msgs) )
+                    return  jsonify(json.dumps(transactions_) )
 
             # return jsonify("MissingArgument: Arguements 'range' missing")
 

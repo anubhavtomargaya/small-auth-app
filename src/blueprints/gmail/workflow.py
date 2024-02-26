@@ -275,7 +275,7 @@ def extractCodedContentFromRawMessages(raw_messages_list:list):
     
     app.logger.info('Input messages to process: %s',len(raw_messages_list))
     return_list = []
-    for msg in raw_messages_list:
+    for msg in raw_messages_list: ### while loop to listen to stream
         app.logger.info('processing message: %s',msg['id'])
         try: #map and save
             payload = msg['payload']
@@ -338,6 +338,7 @@ def getContentsFromBody(ebd):
         return date,to_vpa,amount_debtied
 
 def getEmailBody(coded_body):
+    """ trys to find the relevand html tag in the email that contains the data """
     data = coded_body.replace("-","+").replace("_","/")
     decoded_data = base64.b64decode(data)
     soup = BeautifulSoup(decoded_data , "html.parser")
@@ -352,6 +353,9 @@ def getEmailBody(coded_body):
 
 
 def extractBodyFromEncodedData(coded_relevant_json):
+    """ not giving a shit about the previous function or the global stage param, just
+        needs the key msgEncodedData to be there fks off to do the job 
+    """
     if not isinstance(coded_relevant_json,list):
         x=[]
         x.append(coded_relevant_json)
@@ -437,7 +441,11 @@ def getQueryForDateRange(st,end):
     logger.info('query generated.')
     return query
 from .time_utils import get_timerange
-def get_query_for_email(email='alerts@hdfcbank.net',):
+def get_query_for_email(email='alerts@hdfcbank.net',
+                        start=None,
+                        end=None):
+        if start and end:
+            return  f"from:{email} after:{start} before:{end}"
         
         before,after = get_timerange()
         x = f"from:{email} after:{after} before:{before}"
