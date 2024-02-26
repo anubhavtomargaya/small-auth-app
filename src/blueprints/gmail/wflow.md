@@ -1,6 +1,5 @@
 # FLOW
 
-
 ## FETCH
 check for user's details in db.
 take input from the logged in user.
@@ -52,3 +51,8 @@ collect the tags from all and rank them > return a list on top n.
 
 
 
+## tasks
+ - build the mailbox to fetch and store in raw db
+ - build a db handling layer for ease, figure out best practices here
+ - before all that fix any shit in the basic working of getting the token on the home page
+ - build interface to access user and raw table > use it for mailbox interface
