@@ -2,9 +2,10 @@
 
 import json
 from flask import jsonify
-from query import get_query_for_email
-from utils import get_matched_threads
-from workflow import extractCodedContentFromRawMessages, get_messages_data_from_threads
+from .query import get_query_for_email
+from .utils import get_matched_threads, get_messages_data_from_threads
+# from process_encoded import extractBodyFromEncodedData
+from .process_raw import extractCodedContentFromRawMessages
 
 
 class TokenFetchRequest:

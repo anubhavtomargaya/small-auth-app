@@ -5,9 +5,10 @@ import requests,json,datetime
 from flask import current_app,jsonify,request, url_for, redirect,render_template
 from ...common.session_manager import get_auth_token, is_logged_in,set_next_url
 from ..google_auth.auth import get_user_info
-from .utils import MAILBOX_MESSAGE_COUNT, MAILBOX_THREAD_COUNT, get_matched_threads, get_messages_by_thread_ids, get_messages_data_from_threads
-from .workflow import get_query_for_email, getQueryForDateRange,processRawMessagesWithStages,getQueryForLastDay,fetchRawMessagesForQuery
+from .query import get_query_for_email
+from .utils import get_matched_threads, get_messages_by_thread_ids, get_messages_data_from_threads
 from .gmail_fetcher import GmailFetcher
+from src.blueprints.gmail.fetch_by_token import fetch_for_token,TokenFetchRequest
 RAW_MESSAGE_COUNT= None
 stats_dict = {
         "MAILBOX_THREAD_COUNT" :None,
@@ -38,14 +39,10 @@ class FetchRequest:
     def __init__(self,
                  start_date:str,
                  end_date:str,
-                 range:str=RANGE_STR,
-                 stage:int=2,
                  from_email:str=FM_EMAIL,
                  history_id:int=None,
-                 session_token:object=None) -> None:
+                 session_token=None) -> None:
         
-        self.range_str = range 
-        self.stage = stage 
         self.st = start_date
         self.et = end_date
         self.from_email = from_email
@@ -69,13 +66,16 @@ def fetchTransactionEmailsFromGmail():
         current_app.logger.info('args: %s',args)
         ###read arguements
         if is_logged_in():
-            print(get_auth_token())
             if args.get('range_str'):
                 query_range_str = args.get('range_str') #1
             else:
-                    lastDayQuery = getQueryForLastDay()
                     st='2024-02-21'
                     et='2024-02-28'
+                    token = get_auth_token()
+                    rq = TokenFetchRequest(token=token,
+                                    start=st,
+                                    end=et)
+                    return fetch_for_token(rq) #tested using token as input instead of from session
                     rangeQuery = get_query_for_email(start=st,end=et)
                     threads = get_matched_threads(rangeQuery)
                     stats_dict['MAILBOX_THREAD_COUNT'] = len(threads)
