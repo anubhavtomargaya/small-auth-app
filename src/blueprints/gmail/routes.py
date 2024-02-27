@@ -3,13 +3,18 @@ from src.blueprints.gmail.process_raw import extractCodedContentFromRawMessages,
 from . import gmail_app
 import requests,json,datetime
 from flask import current_app,jsonify,request, url_for, redirect,render_template
-from ...common.session_manager import is_logged_in,set_next_url
+from ...common.session_manager import get_auth_token, is_logged_in,set_next_url
 from ..google_auth.auth import get_user_info
-from .utils import get_matched_threads, get_messages_by_thread_ids, get_messages_data_from_threads
+from .utils import MAILBOX_MESSAGE_COUNT, MAILBOX_THREAD_COUNT, get_matched_threads, get_messages_by_thread_ids, get_messages_data_from_threads
 from .workflow import get_query_for_email, getQueryForDateRange,processRawMessagesWithStages,getQueryForLastDay,fetchRawMessagesForQuery
 from .gmail_fetcher import GmailFetcher
-
-
+RAW_MESSAGE_COUNT= None
+stats_dict = {
+        "MAILBOX_THREAD_COUNT" :None,
+        "MAILBOX_MESSAGE_COUNT" : None,
+        "RAW_MESSAGE_COUNT":None,
+        "TRANSACTION_MESSAGE_COUNT":None
+        }
 
 @gmail_app.route('/',methods=['GET','POST'])
 def index():
@@ -47,6 +52,9 @@ class FetchRequest:
         self.history_id=history_id
         self.session_token = session_token
 
+@gmail_app.route('/stats/',methods=['GET']) 
+def get_last_load_stats():
+    return jsonify(stats_dict)
 
 @gmail_app.route('/fetch/',methods=['GET','POST']) 
 def fetchTransactionEmailsFromGmail():
@@ -54,22 +62,14 @@ def fetchTransactionEmailsFromGmail():
     start_time = datetime.datetime.utcnow()
     mthd = request.method 
     args = request.args
-    
-    # if (content_type == 'application/json'):
-    # data = request.data
 
     current_app.logger.info('query: %s',mthd)
-    # return jsonify(mthd)
-    
-    # else:
-        # return "TypeError: Content-Type not supported!"
-    # body = request.get_json()
-    
-    # current_current_app.logger('request received: %s \n %s \n %s',mthd,body,data)
+ 
     if mthd == 'GET':
         current_app.logger.info('args: %s',args)
         ###read arguements
         if is_logged_in():
+            print(get_auth_token())
             if args.get('range_str'):
                 query_range_str = args.get('range_str') #1
             else:
@@ -78,14 +78,18 @@ def fetchTransactionEmailsFromGmail():
                     et='2024-02-28'
                     rangeQuery = get_query_for_email(start=st,end=et)
                     threads = get_matched_threads(rangeQuery)
+                    stats_dict['MAILBOX_THREAD_COUNT'] = len(threads)
                 # current_app.logger.info(d)
                     print("returning")
                     msgs = get_messages_data_from_threads(threads)
+                    stats_dict['MAILBOX_MESSAGE_COUNT'] = len(msgs)
                     print(threads)
                     # coded_msgs = [parse_gmail_message(msg) for msg in msgs]
                     coded_msgs = extractCodedContentFromRawMessages(msgs)
+                    stats_dict['RAW_MESSAGE_COUNT'] = len(coded_msgs)
                     #put this into db, along w count
                     transactions_ = extractBodyFromEncodedData(coded_msgs)
+                    stats_dict['TRANSACTION_MESSAGE_COUNT'] = len(transactions_)
 
                     return  jsonify(json.dumps(transactions_) )
 

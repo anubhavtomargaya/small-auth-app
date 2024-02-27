@@ -1,17 +1,20 @@
 from flask import current_app as app, jsonify
 from ...common.google_utils import build_credentials
 from googleapiclient.discovery import build
+from typing import List, Union,Dict
+
 MAILBOX_THREAD_COUNT = None
 MAILBOX_MESSAGE_COUNT = None
 
 def get_matched_threads(query,
-                     maxResults:int=400):   
+                     maxResults:int=400,
+                     token=None):   
     try:
         app.logger.info('building credentials')
 
         oauth2_client = build(
                             'gmail','v1',
-                            credentials=build_credentials())
+                            credentials=build_credentials(oauth2_tokens=token))
         if not oauth2_client :
             raise Exception("Unable to build oauth client for gmail")
         
@@ -25,7 +28,6 @@ def get_matched_threads(query,
     except Exception as e:
         app.logger.exception('building credentials failed')
         return jsonify(e)
-from typing import List, Union,Dict
 
 class Message:
     def __init__(self, id: str, threadId: str,
@@ -37,8 +39,6 @@ class Message:
         self.threadId: str = threadId
         self.payload: Dict = payload
         self.snippet = snippet
-
-        # Include any other relevant attributes from the API response
 
 class ApiCallError(Exception):
     """Custom exception for API call errors."""
@@ -77,7 +77,8 @@ def get_messages_by_thread_ids(ids: List[str]) -> Union[List[Message], ApiCallEr
     MAILBOX_MESSAGE_COUNT = len(messages)
     return messages
 
-def get_messages_data_from_threads(ids):
+def get_messages_data_from_threads(ids,
+                                   token=None):
     """
     service: gmail service built using token
     ids: list of thread Ids to process
@@ -90,7 +91,7 @@ def get_messages_data_from_threads(ids):
         try:
             oauth2_client = build(
                             'gmail','v1',
-                            credentials=build_credentials())
+                            credentials=build_credentials(oauth2_tokens=token))
             if not oauth2_client :
                 raise Exception("Unable to build oauth client for gmail")
         

@@ -55,16 +55,16 @@ class EmailContent(EmailMessage):
         super().__init__(msg_id, thread_id, snippet, msg_epoch_time)
         self.msg_encoded_data = msg_encoded_data
 
-def extractCodedContentFromRawMessages(raw_messages_list:list):
+def extractCodedContentFromRawMessages(email_messages:list):
     """Works like mapper for RAW MESSAGES
     Args:
-        raw_messages_list (list): RAW returned by gmail service
+        email_messages (list): RAW returned by gmail service
     """
    
     
-    app.logger.info('Input messages to process: %s',len(raw_messages_list))
+    app.logger.info('Input messages to process: %s',len(email_messages))
     return_list = []
-    for msg in raw_messages_list: ### while loop to listen to stream
+    for msg in email_messages: ### while loop to listen to stream
         app.logger.info('processing message: %s',msg['id'])
         try: #map and save
 
@@ -104,6 +104,6 @@ def extractCodedContentFromRawMessages(raw_messages_list:list):
             app.logger.exception('MappingError: for the message id %s',msg['id'])
             return e
         
-    app.logger.info('messages extracted %s \n messages given: %s',len(return_list),len(raw_messages_list))
+    app.logger.info('messages extracted %s \n messages given: %s',len(return_list),len(email_messages))
     return return_list
 
