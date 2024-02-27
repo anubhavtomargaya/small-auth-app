@@ -3,16 +3,17 @@ from peewee import *
 import logging
 from playhouse.shortcuts import model_to_dict  
 # from config import username,password,database_name,endpoint
-endpoint = "mgdb.cvatnnmljapj.ap-southeast-1.rds.amazonaws.com"
-username = "gandhi"
-password = "moneyman"
-database_name = "SPDB"
 
+host="192.168.0.108"
+port="5432"
+dbname="testpi"
+username="postgres"
+password="postgres"
 
 # db= MySQLDatabase(database_name,username ,password,endpoint)
-db = SqliteDatabase(':memory:')
-# db = PostgresqlDatabase('SPDB',host= endpoint, 
-                            # user=username,password = password,port=5432)
+# db = SqliteDatabase(':memory:')
+db = PostgresqlDatabase(database=dbname,host= host, 
+                            user=username,password = password,port=5432)
 
 # print(db.get_tables())
 # curs = db.cursor()
