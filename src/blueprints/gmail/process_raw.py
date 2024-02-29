@@ -1,6 +1,6 @@
 from flask import current_app as app
 from playhouse.shortcuts import model_to_dict, dict_to_model
-from src.blueprints.gmail.models import RawTransactions
+from src.common.db_init import RawTransactions
 
 
 def parse_gmail_message(msg):

@@ -1,7 +1,12 @@
 
 
+import datetime
 import json
 from flask import jsonify
+from src.common.common_utils import get_now_time_string, get_random_execution_id
+from src.common.db_handler import insert_execution_metadata,insert_raw_transactions
+
+from src.common.db_init import PipelineExecutionMeta
 from .query import get_query_for_email
 from .utils import get_matched_threads, get_messages_data_from_threads
 # from process_encoded import extractBodyFromEncodedData
@@ -20,16 +25,53 @@ class TokenFetchRequest:
         self.end = end
         self.email = email
         
+# def start_pipeline(gmail_query:str='test', 
+#                    user_id='me'):
+    
+#     """Starts a new pipeline, creates a corresponding entry in PipelineExecutionMeta,
+#       and returns the execution ID."""
+#     # Start time (replace with actual logic for getting current time)
+#     start_time = datetime.datetime.now()
+
+#     # Create a new execution metadata entry
+#     execution_meta = PipelineExecutionMeta.create(
+#         gmail_query=gmail_query,
+#         start_time=start_time,
+#         user_id=user_id,
+#     )
+
+#     return execution_meta.execution_id
+from src.common.models import MetaEntry
+
+
 def fetch_for_token(request:TokenFetchRequest):
+    """ insert into database the raw transaction encoded msg format
+    also update the """
     if not isinstance(request,TokenFetchRequest):
         raise TypeError("Invalid input")
     #validate token
+    meta_entry = MetaEntry(execution_id=get_random_execution_id(),
+                           start_time=get_now_time_string(),
+                           )
     mailbox_query = get_query_for_email(start=request.start,end=request.end)
+    meta_entry.query=mailbox_query
     thread_ids =  get_matched_threads(mailbox_query,token=request.token) #log output 
+    meta_entry.thread_count = len(thread_ids)
+
     email_msgs_list = get_messages_data_from_threads(thread_ids,token=request.token)
+    meta_entry.email_message_count = len(email_msgs_list)
     raw_coded_msgs = extractCodedContentFromRawMessages(email_msgs_list)
+    print(raw_coded_msgs[0],"raw msgs")
+    print(raw_coded_msgs[0].keys(),"raw msgs")
+    db_response = insert_raw_transactions(raw_coded_msgs)
+    print("db res",db_response)
     #insert these into db as RawTransactions
-    RAW_MESSAGE_COUNT = len(raw_coded_msgs)
+
+    meta_entry.raw_message_count =  len(raw_coded_msgs)
+    meta_entry.end_time = get_now_time_string()
+    meta_entry.status = "SUCCESS"
+
+    insert_execution_metadata(meta_entry)
     return  jsonify(json.dumps(raw_coded_msgs) )
 
 

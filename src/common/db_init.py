@@ -1,58 +1,40 @@
-import datetime
+from playhouse.shortcuts import model_to_dict
 from peewee import *
-import logging
-from playhouse.shortcuts import model_to_dict  
-# from config import username,password,database_name,endpoint
-endpoint = "mgdb.cvatnnmljapj.ap-southeast-1.rds.amazonaws.com"
-username = "gandhi"
-password = "moneyman"
-database_name = "SPDB"
+# from db_config import username,password,dbname,endpoint
 
-
-# db= MySQLDatabase(database_name,username ,password,endpoint)
-db = SqliteDatabase(':memory:')
-# db = PostgresqlDatabase('SPDB',host= endpoint, 
+# db = PostgresqlDatabase(dbname,host= endpoint, 
                             # user=username,password = password,port=5432)
 
-# print(db.get_tables())
-# curs = db.cursor()
+# db= MySQLDatabase(database_name,username ,password,endpoint)
 
-##models
-from typing import Union, List, Dict, Optional
-
-# Input Model (Simplified based on provided code and assumptions)
-class EmailMessage:
-    """ msg recvd from thread"""
-    def __init__(self, msg_id, thread_id, snippet, msg_epoch_time):
-        self.msg_id = msg_id
-        self.thread_id = thread_id
-        self.snippet = snippet
-        self.msg_epoch_time = msg_epoch_time
-
-class RawMessage(EmailMessage):
-    """ encoded data found after recursing through parts"""
-    def __init__(self, msg_id, thread_id, snippet, msg_epoch_time, msg_encoded_data):
-        super().__init__(msg_id, thread_id, snippet, msg_epoch_time)
-        self.msg_encoded_data = msg_encoded_data
-
-
-class Message(RawMessage):
-    """ extracted data is the date,amt,vpa class extracted by regex"""
-    def __init__(self, msg_encoded_data: str):
-        self.msg_encoded_data: str = msg_encoded_data
-        self.extracted_data = None
-
-# Output Model
-class ExtractedData:
-    def __init__(self, date: Optional[str], to_vpa: Optional[str], amount_debtied: Optional[str]):
-        self.date: Optional[str] = date
-        self.to_vpa: Optional[str] = to_vpa
-        self.amount_debtied: Optional[str] = amount_debtied
-
+db = SqliteDatabase('pockets.db', pragmas={
+    'journal_mode': 'wal',
+    'cache_size': -1 * 64000,  # 64MB
+    'foreign_keys': 1,
+    'ignore_check_constraints': 0,
+    'synchronous': 0})
 
 class BaseModel(Model):
     class Meta:
         database = db
+
+from peewee import *
+from playhouse.shortcuts import model_to_dict  
+
+
+class PipelineExecutionMeta(BaseModel):
+    execution_id = CharField(primary_key=True)
+    gmail_query = CharField(null=True)
+    start_time = DateTimeField(null=True)
+    end_time = DateTimeField(null=True)
+    thread_count = IntegerField(default=0,null=True)
+    email_message_count = IntegerField(default=0,null=True)
+    raw_message_count = IntegerField(default=0,null=True)
+    decoded_message_count = IntegerField(default=0,null=True)
+    status = CharField(default=None)
+    user_id = CharField(null=True)  # Added for foreign key relationship
+    class Meta:
+        table_name = 'execution_metadata'
 
 class RawTransactions(BaseModel):
     txn_id = AutoField() #change to the upstream txn primary key 
@@ -76,8 +58,10 @@ class RawTransactionsV1(BaseModel):
     
     class Meta:
         table_name = 'raw_transactionsv1'
+
 ##being used as a reporting layer of the transaction but the non null fields are problematic 
 ##so the data would not be processed on the server. Errors are destined for this endeavour.
+        
 # class Transactions(BaseModel):
 #     txn_id = AutoField() #change to the upstream txn primary key 
 #     msgId=TextField(unique=True)
@@ -133,17 +117,5 @@ class InsertResponse():
     def __init__(self) -> None:
         self.success_inserts = []
         self.failed_insert = []
-
-
-db.create_tables([Transactions,VPA,RawTransactions])
-print(db.get_tables())
-# print(db.drop_tables([Tra]))
-# print(db.get_tables())
-# query = Transactions.select()
-# output = []
-# for row in query:
-#     output.append(model_to_dict(row))
-# print(output)
-
-
-
+# db.create_tables([Transactions,VPA,RawTransactions])
+db.create_tables([PipelineExecutionMeta,RawTransactions])
