@@ -75,7 +75,7 @@ def extractBodyFromEncodedData(coded_relevant_json):
                     message = txn.__dict__['__data__']
                 else:
                     message = txn
-                print("msg: ",message)
+                # print("msg: ",message)
                 data = message['msgEncodedData']
                 # app.logger.info('processing json ')
                 # date,to_vpa,amount_debtied = getEmailBody(data)

@@ -56,18 +56,21 @@ def conclude_fetch():
 
 def start_parse(): pass
 
-def get_mesaages_to_parse(existing_msgs:list,inserted_msgs:list):
-    if len(existing_msgs) > 0: 
+def get_mesaages_to_parse(existing_msgs:list,inserted_msgs:list,
+                          include_existing:bool=True):
+    print("inserted now looks",inserted_msgs)
+    proc = []
+    if len(existing_msgs) > 0 and include_existing: 
         # should its needed to process the 
         # existing again, do here
-        pass 
+        proc.extend(existing_msgs)
+        print("inserted now looks",inserted_msgs)
 
     if len(inserted_msgs) > 0: 
-        return query_raw_messages(inserted_msgs,column=None)
+        proc.extend(inserted_msgs)
+    return query_raw_messages(proc,column=None)
 
     
-def parse_coded_message(coded_msgs):
-    extractBodyFromEncodedData(get_mesaages_to_parse())
 
 
 def fetch_for_token(request:TokenFetchRequest):
@@ -96,8 +99,9 @@ def fetch_for_token(request:TokenFetchRequest):
     meta_entry.end_time = get_now_time_string()
     meta_entry.status = "SUCCESS"
     ## execute pipeline to get messages from db and insert into db
-    to_proc = extractBodyFromEncodedData(get_mesaages_to_parse(db_response.inserted_msgs,db_response.existing_msgs))
+    to_proc = extractBodyFromEncodedData(get_mesaages_to_parse(db_response.existing_msgs,db_response.inserted_msgs,include_existing=False))
     out_yeild = insert_final_transactions(to_proc)
+    meta_entry.decoded_message_count = len(out_yeild['inserted'])
     # for x in to_proc:
     #     print("xx02 ss")
     #     print(type(x))

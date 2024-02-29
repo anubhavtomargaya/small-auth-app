@@ -69,8 +69,8 @@ def fetchTransactionEmailsFromGmail():
             if args.get('range_str'):
                 query_range_str = args.get('range_str') #1
             else:
-                    st='2024-02-21'
-                    et='2024-02-28'
+                    st='2023-11-01'
+                    et='2024-01-01'
                     token = get_auth_token()
                     rq = TokenFetchRequest(token=token,
                                     start=st,
