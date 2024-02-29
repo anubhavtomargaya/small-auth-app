@@ -139,3 +139,6 @@ test_gmail_auth.py
 =======
 token.pickle
 >>>>>>> 0d88f34 (old changes)
+pockets.db
+pockets.db-shm
+pockets.db-wal
