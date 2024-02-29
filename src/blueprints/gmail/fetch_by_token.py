@@ -4,14 +4,19 @@ import datetime
 import json
 from flask import jsonify
 from src.common.common_utils import get_now_time_string, get_random_execution_id
-from src.common.db_handler import insert_execution_metadata,insert_raw_transactions
+from src.common.db_handler import insert_execution_metadata, insert_final_transactions,insert_raw_transactions, query_raw_messages
 
 from src.common.db_init import PipelineExecutionMeta
+from src.blueprints.gmail.process_encoded import extractBodyFromEncodedData
 from .query import get_query_for_email
 from .utils import get_matched_threads, get_messages_data_from_threads
 # from process_encoded import extractBodyFromEncodedData
 from .process_raw import extractCodedContentFromRawMessages
 
+class FetchResponse:
+    def __init__(self,
+                 ) -> None:
+        pass
 
 class TokenFetchRequest:
     def __init__(self,
@@ -43,36 +48,66 @@ class TokenFetchRequest:
 #     return execution_meta.execution_id
 from src.common.models import MetaEntry
 
+def start_fetch():
+    pass 
+
+def conclude_fetch():
+    pass 
+
+def start_parse(): pass
+
+def get_mesaages_to_parse(existing_msgs:list,inserted_msgs:list):
+    if len(existing_msgs) > 0: 
+        # should its needed to process the 
+        # existing again, do here
+        pass 
+
+    if len(inserted_msgs) > 0: 
+        return query_raw_messages(inserted_msgs,column=None)
+
+    
+def parse_coded_message(coded_msgs):
+    extractBodyFromEncodedData(get_mesaages_to_parse())
+
 
 def fetch_for_token(request:TokenFetchRequest):
     """ insert into database the raw transaction encoded msg format
-    also update the """
+    also update the meta for execution """
     if not isinstance(request,TokenFetchRequest):
         raise TypeError("Invalid input")
-    #validate token
-    meta_entry = MetaEntry(execution_id=get_random_execution_id(),
-                           start_time=get_now_time_string(),
-                           )
+    
+    #validate_token(): raise
+    execution_id = get_random_execution_id()
+    exec_start_time = get_now_time_string()
+   
     mailbox_query = get_query_for_email(start=request.start,end=request.end)
-    meta_entry.query=mailbox_query
-    thread_ids =  get_matched_threads(mailbox_query,token=request.token) #log output 
-    meta_entry.thread_count = len(thread_ids)
-
+    thread_ids = get_matched_threads(mailbox_query,token=request.token) #log output 
     email_msgs_list = get_messages_data_from_threads(thread_ids,token=request.token)
-    meta_entry.email_message_count = len(email_msgs_list)
     raw_coded_msgs = extractCodedContentFromRawMessages(email_msgs_list)
-    print(raw_coded_msgs[0],"raw msgs")
-    print(raw_coded_msgs[0].keys(),"raw msgs")
-    db_response = insert_raw_transactions(raw_coded_msgs)
-    print("db res",db_response)
+    db_response = insert_raw_transactions(execution_id, raw_coded_msgs)
+    # print("db res",db_response.__dict__)
+    # print(f"for exec_id {db_response.execution_id}: inserted # {len(db_response.inserted_msgs)} existing # {len(db_response.existing_msgs)}")
     #insert these into db as RawTransactions
-
+    meta_entry = MetaEntry(execution_id=execution_id, start_time=exec_start_time)
+    meta_entry.query=mailbox_query
+    meta_entry.email_message_count = len(email_msgs_list)
+    meta_entry.thread_count = len(thread_ids)
     meta_entry.raw_message_count =  len(raw_coded_msgs)
     meta_entry.end_time = get_now_time_string()
     meta_entry.status = "SUCCESS"
-
-    insert_execution_metadata(meta_entry)
-    return  jsonify(json.dumps(raw_coded_msgs) )
+    ## execute pipeline to get messages from db and insert into db
+    to_proc = extractBodyFromEncodedData(get_mesaages_to_parse(db_response.inserted_msgs,db_response.existing_msgs))
+    out_yeild = insert_final_transactions(to_proc)
+    # for x in to_proc:
+    #     print("xx02 ss")
+    #     print(type(x))
+    response = {"msg":f"for exec_id {db_response.execution_id}: inserted # {len(db_response.inserted_msgs)} existing # {len(db_response.existing_msgs)}",
+                "meta": meta_entry.__dict__,
+                "dbresponse":db_response.__dict__,
+                "fntnresponse":out_yeild
+                }
+    insert_execution_metadata( meta_entry)
+    return  jsonify(response) 
 
 
 if __name__ == '__main__':

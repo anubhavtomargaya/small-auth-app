@@ -53,24 +53,29 @@ def extractBodyFromEncodedData(coded_relevant_json):
     """ not giving a shit about the previous function or the global stage param, just
         needs the key msgEncodedData to be there fks off to do the job 
     """
-    if not isinstance(coded_relevant_json,list):
-        x=[]
-        x.append(coded_relevant_json)
-        coded_relevant_json=x
-    else:
-        pass
+    # if not isinstance(coded_relevant_json,list):
+        # raise TypeError("ExtractionError: input must be a list")
+        # x=[]
+    #     x.append(coded_relevant_json)
+    #     coded_relevant_json=x
+    # else:
+    #     pass
    
     try:
         app.logger.info('type of input %s',type(coded_relevant_json))
-        count = len(coded_relevant_json)
-        app.logger.info('size of input messages %s',count)
+        # count = len(coded_relevant_json)
+        # app.logger.info('size of input messages %s',count)
         decoded_extracted_info = []
         failed_first_box = []
         # coded_relevant_json=list(coded_relevant_json)
-        for message in coded_relevant_json:
+        for txn in coded_relevant_json:
             # logger.info('message %s',message)
             try:
-
+                if not isinstance(txn,dict):
+                    message = txn.__dict__['__data__']
+                else:
+                    message = txn
+                print("msg: ",message)
                 data = message['msgEncodedData']
                 # app.logger.info('processing json ')
                 # date,to_vpa,amount_debtied = getEmailBody(data)
@@ -87,6 +92,7 @@ def extractBodyFromEncodedData(coded_relevant_json):
                 decoded_extracted_info.append(message)
             except Exception as e:
                 app.logger.exception('error extracting message id %s,',e)
+                failed_first_box.append(message['msgId'])
                 return ("ExtractionError:",e)
 
         app.logger.info('size of output messages %s',len(decoded_extracted_info))

@@ -30,6 +30,7 @@ class PipelineExecutionMeta(BaseModel):
     thread_count = IntegerField(default=0,null=True)
     email_message_count = IntegerField(default=0,null=True)
     raw_message_count = IntegerField(default=0,null=True)
+    existing_raw_message_count = IntegerField(default=0,null=True)
     decoded_message_count = IntegerField(default=0,null=True)
     status = CharField(default=None)
     user_id = CharField(null=True)  # Added for foreign key relationship
@@ -86,7 +87,7 @@ class Transactions(BaseModel):
     record_created_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
 
     class Meta:
-        table_name = 'transactions_01'
+        table_name = 'upi_transactions'
 
 
 class VPA(BaseModel):
@@ -118,4 +119,4 @@ class InsertResponse():
         self.success_inserts = []
         self.failed_insert = []
 # db.create_tables([Transactions,VPA,RawTransactions])
-db.create_tables([PipelineExecutionMeta,RawTransactions])
+db.create_tables([PipelineExecutionMeta,RawTransactions,Transactions])
