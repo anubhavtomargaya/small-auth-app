@@ -142,3 +142,4 @@ token.pickle
 pockets.db
 pockets.db-shm
 pockets.db-wal
+src/blueprints/gmail/store.py

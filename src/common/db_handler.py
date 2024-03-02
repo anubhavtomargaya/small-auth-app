@@ -40,7 +40,7 @@ def insert_raw_transactions(execution_id,
     existing_ids = []
     for row_data in data_list:
         try:
-                
+                #TODO: Insert executionid in txn table as wellx
             with db.atomic():
                     # Attempt insert using insert_many with ignore conflicts
                     # inserted_objects.extend(RawTransactions.insert_many(row_data).execute())
