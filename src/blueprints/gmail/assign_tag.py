@@ -10,7 +10,7 @@ from src.common.db_init import Transactions
 from playhouse.shortcuts import model_to_dict
 
 def aztec():
-    
+
    pass 
 
 def ass_tag(userid,sessionid=None):
@@ -22,7 +22,7 @@ def ass_tag(userid,sessionid=None):
     # find if any transaction falling in labelled group
     pass
 
-def _get_txns(msgId:list):
+def _get_txns_by_msg_id(msgId:list):
     if not isinstance(msgId,list):
         raise TypeError("Pass a list of msgIds")
     query = Transactions.select().where(Transactions.msgId << msgId)
@@ -74,7 +74,7 @@ if __name__ == '__main__':
              '18dc7c057e8934d6',
              '18d1ccf5cc2a5999',
              '18d40e5e0e9d6e91']
-    txns = _get_txns(msgid)
+    txns = _get_txns_by_msg_id(msgid)
     for i in txns:
         print(i.to_vpa)
         _process_vpa(i.to_vpa)

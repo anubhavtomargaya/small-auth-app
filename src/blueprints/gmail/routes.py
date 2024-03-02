@@ -53,10 +53,18 @@ class FetchRequest:
 def get_last_load_stats():
     return jsonify(stats_dict)
 
+@gmail_app.route('/view/',methods=['GET']) 
+def get_transactions_final():
+    mthd = request.method 
+    args = request.args
+
+
+
+
 @gmail_app.route('/fetch/',methods=['GET','POST']) 
 def fetchTransactionEmailsFromGmail():
-    params = ['range_str','stage']
-    start_time = datetime.datetime.utcnow()
+    # params = ['range_str','stage']
+    # start_time = datetime.datetime.utcnow()
     mthd = request.method 
     args = request.args
 
@@ -69,8 +77,8 @@ def fetchTransactionEmailsFromGmail():
             if args.get('range_str'):
                 query_range_str = args.get('range_str') #1
             else:
-                    st='2023-11-01'
-                    et='2024-01-01'
+                    st='2024-02-29'
+                    et='2024-03-31'
                     token = get_auth_token()
                     rq = TokenFetchRequest(token=token,
                                     start=st,
