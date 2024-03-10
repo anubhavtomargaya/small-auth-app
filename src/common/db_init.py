@@ -39,6 +39,7 @@ class PipelineExecutionMeta(BaseModel):
 
 class RawTransactions(BaseModel):
     txn_id = AutoField() #change to the upstream txn primary key 
+    execution_id = CharField(null=True)
     msgId=TextField(unique=True)
     threadId=TextField()
     snippet=TextField(null=True)
@@ -79,11 +80,13 @@ class RawTransactionsV1(BaseModel):
 
 class Transactions(BaseModel):
     txn_id = AutoField() #change to the upstream txn primary key 
+    execution_id = CharField(null=True)
     msgId=CharField(unique=True)
     msgEpochTime = BigIntegerField(null=True)
     date = DateField(null=True,formats=['%d-%m-%Y','%Y-%m-%d']) #give format according to upstream
     to_vpa = CharField(null=True)
     amount_debited = DecimalField(null=True)
+    label = TextField(null=True,default=None)
     record_created_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
 
     class Meta:
@@ -118,5 +121,6 @@ class InsertResponse():
     def __init__(self) -> None:
         self.success_inserts = []
         self.failed_insert = []
+        
 # db.create_tables([Transactions,VPA,RawTransactions])
 db.create_tables([PipelineExecutionMeta,RawTransactions,Transactions])

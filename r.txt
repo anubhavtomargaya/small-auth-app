@@ -9,7 +9,6 @@ click==8.1.3
 cryptography==39.0.1
 Flask==2.2.3
 Flask-Cors==3.0.10
-<<<<<<< HEAD
 google-api-core==2.10.0
 google-api-python-client==2.58.0
 google-auth==2.11.0
@@ -46,8 +45,6 @@ uritemplate==4.1.1
 urllib3==1.26.14
 Werkzeug==2.2.3
 zipp==3.14.0
-=======
->>>>>>> 0d88f34 (old changes)
 google-api-core==2.10.0
 google-api-python-client==2.58.0
 google-auth==2.11.0

@@ -45,6 +45,20 @@ def _query_transaction_table_by_range(start,end):
     except Exception as e:
         raise e
     
+def _query_transaction_table_by_session_id(session_id:str):
+    try:
+        start_date = datetime.strptime(start, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end, '%Y-%m-%d').date() + timedelta(days=1)  # Include end date
+        #need to add user id to table
+        query = Transactions.select(Transactions.msgId,Transactions.msgEpochTime,Transactions.date,Transactions.to_vpa,Transactions.amount_debited).where(
+        (Transactions.date >= start_date) & (Transactions.date < end_date)
+        )
+        # query = Transactions.select().where(Transactions.date > start )
+        output = list(query.execute())
+        return output
+    except Exception as e:
+        raise e
+    
 def _prepare_txn_for_show(txn_models:list):
     """ if need to return a proper view from backend how should the final schema look.
             - column names (case sensitive)

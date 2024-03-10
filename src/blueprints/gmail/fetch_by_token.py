@@ -100,7 +100,7 @@ def fetch_for_token(request:TokenFetchRequest):
     meta_entry.status = "SUCCESS"
     ## execute pipeline to get messages from db and insert into db
     to_proc = extractBodyFromEncodedData(get_mesaages_to_parse(db_response.existing_msgs,db_response.inserted_msgs,include_existing=False))
-    out_yeild = insert_final_transactions(to_proc)
+    out_yeild = insert_final_transactions(execution_id, to_proc)
     meta_entry.decoded_message_count = len(out_yeild['inserted'])
     # for x in to_proc:
     #     print("xx02 ss")

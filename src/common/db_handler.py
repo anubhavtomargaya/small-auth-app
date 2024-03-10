@@ -44,6 +44,7 @@ def insert_raw_transactions(execution_id,
             with db.atomic():
                     # Attempt insert using insert_many with ignore conflicts
                     # inserted_objects.extend(RawTransactions.insert_many(row_data).execute())
+                    row_data['execution_id'] = execution_id
                     inserted_object = RawTransactions.insert_many(row_data).execute()
                     inserted_objects.append(row_data['msgId'])
             # created_objects.append(insert_raw_transaction(row_data))
@@ -90,7 +91,7 @@ def insert_raw_transactions(execution_id,
 #         raise Exception('Error inserting RawTransactions: %s', e)
    
 
-def insert_final_transactions(data_generator):
+def insert_final_transactions(execution_id, data_generator):
     """Inserts transactions from the generator into the 'upi_transactions' table.
 
     Args:
@@ -107,6 +108,7 @@ def insert_final_transactions(data_generator):
                 # Create Transactions object with data
                 transaction = Transactions(
                     msgId=record['msgId'],
+                    execution_id=execution_id,
                     msgEpochTime=record['msgEpochTime']/1000,
                     date= parse(record['date']).date() ,  # Parse date according to format
                     to_vpa=record['to_vpa'],
