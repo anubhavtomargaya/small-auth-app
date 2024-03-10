@@ -2,7 +2,7 @@
 from src.common.common_utils import get_now_time_string
 from src.common.db_init import Transactions, db,PipelineExecutionMeta,RawTransactions
 from playhouse.shortcuts import model_to_dict
-tables_in_db = [PipelineExecutionMeta,RawTransactions]
+tables_in_db = [PipelineExecutionMeta,RawTransactions,Transactions]
 if __name__ == '__main__':
 
     # db.create_tables(tables_in_db)
@@ -22,9 +22,9 @@ if __name__ == '__main__':
     # for transaction in query:
     #     print( transaction.snippet )
 
-    query = Transactions.select().where(Transactions.msgId << id_list)
-    for transaction in query:
-        print( model_to_dict(transaction) )
+    # query = Transactions.select().where(Transactions.msgId << id_list)
+    # for transaction in query:
+    #     print( model_to_dict(transaction) )
     # output = []
     # for row in query:
     #     output.append(model_to_dict(row))
