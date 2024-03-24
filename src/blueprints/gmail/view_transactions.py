@@ -69,8 +69,11 @@ def _prepare_txn_for_show(txn_models:list):
     tmp_df = pd.DataFrame([ model_to_dict( model,exclude=[Transactions.txn_id,Transactions.execution_id,Transactions.record_created_at])
                             for model in txn_models],
                         )
-    
+    if  tmp_df.empty:
+        return tmp_df
     tmp_df[['merchant','bank']] = tmp_df['to_vpa'].str.split('@',expand=True)
+    # check if df is empty
+
     # drop unnecessary -> bank, msgId,to_vpa,
     # rename cols -> rcvd_time, Merchant/POS, Amount, Date
     # format dttm -> msgEpochTime
@@ -101,6 +104,8 @@ def get_transactions_view(start=None,
     else:
         txn_models = _query_transaction_table_by_range(start,end)
     tmp_df = _prepare_txn_for_show(txn_models)
+    if tmp_df.empty:
+        return "NO RECORDS FOUND"
     if df:
         return tmp_df
     if not df:
