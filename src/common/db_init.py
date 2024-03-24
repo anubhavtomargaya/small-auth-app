@@ -87,6 +87,7 @@ class Transactions(BaseModel):
     to_vpa = CharField(null=True)
     amount_debited = DecimalField(null=True)
     label = TextField(null=True,default=None)
+    config_label = CharField(null=True,default=None)
     record_created_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
 
     class Meta:
