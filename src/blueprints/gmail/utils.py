@@ -25,9 +25,11 @@ def get_matched_threads(query,
         # print(thread_list)
         # print("threads  ")
         return  [x['id'] for x in thread_list]
+
+
     except Exception as e:
-        app.logger.exception('building credentials failed')
-        return jsonify(e)
+        app.logger.exception('getting threads failed')
+        raise e
 
 class Message:
     def __init__(self, id: str, threadId: str,

@@ -21,7 +21,7 @@ db = PostgresqlDatabase('SPDB',host= endpoint,
 class BaseModel(Model):
     class Meta:
         database = db
-
+## NOT USED 
 class Transactions(BaseModel):
     txn_id = AutoField() #change to the upstream txn primary key 
     msgId=TextField(unique=True)
