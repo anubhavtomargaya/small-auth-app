@@ -9,6 +9,7 @@ from flask_cors import CORS,cross_origin
 import logging
 from .utils.logger import fh
 from .blueprints.google_auth import google_auth
+from .blueprints.actions import actions_app
 from .blueprints.gmail import gmail_app
 from .common.session_manager import *
 
@@ -28,6 +29,9 @@ def create_app():
 
     app.register_blueprint(google_auth, url_prefix='/google')
     app.logger.info('Flask bp registerd, %s',"/google")
+
+    app.register_blueprint(actions_app, url_prefix='/api/v1/actions')
+    app.logger.info('Flask bp registerd, %s',"/api/v1/actions")
 
     app.register_blueprint(gmail_app, url_prefix='/api/v1')
     app.logger.info('Flask bp registerd, %s',"/api/v1")
