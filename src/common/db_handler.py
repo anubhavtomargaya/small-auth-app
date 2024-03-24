@@ -126,6 +126,7 @@ def insert_final_transactions(execution_id, data_generator):
 
     return {"skipped":skipped_ids,
             "inserted":inserted_ids}
+
 def insert_execution_metadata(meta:MetaEntry):
     try:
         
