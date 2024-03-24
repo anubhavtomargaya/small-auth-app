@@ -1,5 +1,6 @@
 from src.blueprints.gmail.process_encoded import extractBodyFromEncodedData
 from src.blueprints.gmail.process_raw import extractCodedContentFromRawMessages, parse_gmail_message
+from src.blueprints.gmail.view_transactions import get_transactions_view
 from . import gmail_app
 import requests,json,datetime
 from flask import current_app,jsonify,request, url_for, redirect,render_template
@@ -57,6 +58,16 @@ def get_last_load_stats():
 def get_transactions_final():
     mthd = request.method 
     args = request.args
+    exec_id = args.get('id')
+    start = args.get('start')
+    end = args.get('end')
+
+    if mthd =='GET':
+        return jsonify(get_transactions_view(exec_session_id=exec_id,
+                                             start=start,
+                                             end=end,
+                                             df=False))
+
 
 
 
@@ -77,13 +88,18 @@ def fetchTransactionEmailsFromGmail():
             if args.get('range_str'):
                 query_range_str = args.get('range_str') #1
             else:
+
+
                     st='2024-02-29'
                     et='2024-03-31'
+                    #7d2006ea
                     token = get_auth_token()
                     rq = TokenFetchRequest(token=token,
                                     start=st,
                                     end=et)
-                    return fetch_for_token(rq) #tested using token as input instead of from session
+                    return fetch_for_token(rq)
+              
+                     #tested using token as input instead of from session
                     rangeQuery = get_query_for_email(start=st,end=et)
                     threads = get_matched_threads(rangeQuery)
                     stats_dict['MAILBOX_THREAD_COUNT'] = len(threads)

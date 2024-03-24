@@ -36,7 +36,7 @@ def _query_transaction_table_by_range(start,end):
         start_date = datetime.strptime(start, '%Y-%m-%d').date()
         end_date = datetime.strptime(end, '%Y-%m-%d').date() + timedelta(days=1)  # Include end date
         #need to add user id to table
-        query = Transactions.select(Transactions.msgId,Transactions.msgEpochTime,Transactions.date,Transactions.to_vpa,Transactions.amount_debited).where(
+        query = Transactions.select(Transactions.msgId,Transactions.msgEpochTime,Transactions.date,Transactions.to_vpa,Transactions.label,Transactions.amount_debited).where(
         (Transactions.date >= start_date) & (Transactions.date < end_date)
         )
         # query = Transactions.select().where(Transactions.date > start )
@@ -47,12 +47,10 @@ def _query_transaction_table_by_range(start,end):
     
 def _query_transaction_table_by_session_id(session_id:str):
     try:
-        start_date = datetime.strptime(start, '%Y-%m-%d').date()
-        end_date = datetime.strptime(end, '%Y-%m-%d').date() + timedelta(days=1)  # Include end date
+        # start_date = datetime.strptime(start, '%Y-%m-%d').date()
+        # end_date = datetime.strptime(end, '%Y-%m-%d').date() + timedelta(days=1)  # Include end date
         #need to add user id to table
-        query = Transactions.select(Transactions.msgId,Transactions.msgEpochTime,Transactions.date,Transactions.to_vpa,Transactions.amount_debited).where(
-        (Transactions.date >= start_date) & (Transactions.date < end_date)
-        )
+        query = Transactions.select(Transactions.msgId,Transactions.msgEpochTime,Transactions.date,Transactions.label,Transactions.to_vpa,Transactions.amount_debited).where(Transactions.execution_id == session_id  )
         # query = Transactions.select().where(Transactions.date > start )
         output = list(query.execute())
         return output
@@ -68,9 +66,9 @@ def _prepare_txn_for_show(txn_models:list):
             - currency info added, formatted
         """
 
-    tmp_df = pd.DataFrame([ model_to_dict( model,exclude=[Transactions.txn_id,Transactions.record_created_at])
+    tmp_df = pd.DataFrame([ model_to_dict( model,exclude=[Transactions.txn_id,Transactions.execution_id,Transactions.record_created_at])
                             for model in txn_models],
-                        ).set_index('msgId',drop=True)
+                        )
     
     tmp_df[['merchant','bank']] = tmp_df['to_vpa'].str.split('@',expand=True)
     # drop unnecessary -> bank, msgId,to_vpa,
@@ -88,8 +86,8 @@ class TraxModel:
         pass
 
 import pandas as pd
-def get_transactions_view(start,
-                          end,
+def get_transactions_view(start=None,
+                          end=None,
                           exec_session_id=None,
                           df=True,
                           records=False)->pd.DataFrame:
@@ -98,7 +96,10 @@ def get_transactions_view(start,
         instead of by_range, by_session_id will be introduced and used.
 
         """
-    txn_models = _query_transaction_table_by_range(start,end)
+    if exec_session_id:
+        txn_models = _query_transaction_table_by_session_id(exec_session_id)
+    else:
+        txn_models = _query_transaction_table_by_range(start,end)
     tmp_df = _prepare_txn_for_show(txn_models)
     if df:
         return tmp_df
@@ -116,9 +117,11 @@ def get_transactions_view(start,
 # for txn in transactions:
 start ='2024-02-01'
 end ='2024-02-04'
-print(get_transactions_view(start=start,
-                            end=end,
-                            df=False))
+# print(get_transactions_view(exec_session_id='7d2006ea',
+                            # df=False))
+# print(get_transactions_view(start=start,
+#                             end=end,
+#                             df=False))
 #   print(txn.txn_id, txn.msgId, txn.date)
 
 ## case I - after the load, the caller service uses the returned exec_session_id to fetch the records 
